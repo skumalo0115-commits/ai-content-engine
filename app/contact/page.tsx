@@ -1,0 +1,47 @@
+import { MarketingShell } from "@/app/components/MarketingShell";
+import { siteConfig } from "@/app/lib/site";
+import { FacebookIcon, GlobeIcon, LinkedInIcon, MailIcon, WhatsAppIcon } from "../components/Icons";
+
+const contactItems = [
+  { label: "WhatsApp", href: siteConfig.whatsappHref, icon: WhatsAppIcon, value: siteConfig.phoneDisplay },
+  { label: "Email", href: `mailto:${siteConfig.email}`, icon: MailIcon, value: siteConfig.email },
+  { label: "Facebook", href: siteConfig.facebookHref, icon: FacebookIcon, value: "IssUrSlime" },
+  { label: "LinkedIn", href: siteConfig.linkedinHref, icon: LinkedInIcon, value: "Sbahle Kumalo" },
+  { label: "Portfolio", href: siteConfig.portfolioHref, icon: GlobeIcon, value: "View portfolio" },
+];
+
+export default function ContactPage() {
+  return (
+    <MarketingShell>
+      <section className="space-y-6 pt-8">
+        <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Contact</p>
+        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-white">Reach out for launch questions, partnerships, or Pro support.</h1>
+        <p className="max-w-3xl text-base leading-7 text-slate-300">
+          This first release is intentionally lean. If you need help configuring Stripe, OpenRouter, or your launch setup, the fastest contact path is WhatsApp or email.
+        </p>
+      </section>
+
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {contactItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <a
+              key={item.label}
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              className="glass-panel rounded-[28px] p-6 transition hover:border-cyan-300/30 hover:bg-cyan-400/10"
+            >
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-100">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h2 className="mt-4 text-xl font-semibold text-white">{item.label}</h2>
+              <p className="mt-2 text-sm text-slate-300">{item.value}</p>
+            </a>
+          );
+        })}
+      </section>
+    </MarketingShell>
+  );
+}
