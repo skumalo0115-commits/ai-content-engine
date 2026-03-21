@@ -1,204 +1,196 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { FloatingCard } from "@/app/components/FloatingCard";
 import { MarketingShell } from "@/app/components/MarketingShell";
 import { PlanCard } from "@/app/components/PlanCard";
+import { Reveal } from "@/app/components/Reveal";
+import { SelfieHeroScene } from "@/app/components/SelfieHeroScene";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { planConfigs, siteConfig } from "@/app/lib/site";
 import { ArrowUpRightIcon, BoltIcon, CalendarIcon, GaugeIcon, HashIcon, ShieldIcon, SparkIcon } from "./components/Icons";
 
 const featureCards = [
   {
-    title: "AI captions and hooks",
-    content: "Generate launch-ready copy that sounds sharper than generic templates and still stays aligned to your audience and goal.",
+    title: "Captions with structure",
+    content: "Get clear, composed copy that sounds campaign-ready instead of over-automated.",
     icon: <SparkIcon className="h-4 w-4" />,
   },
   {
-    title: "Trending hashtag stacks",
-    content: "Pair your niche with high-intent hashtags that support reach, discovery, and stronger post packaging.",
+    title: "Hashtags with intent",
+    content: "Build cleaner hashtag stacks that support reach without drowning the message.",
     icon: <HashIcon className="h-4 w-4" />,
   },
   {
-    title: "Mini content calendars",
-    content: "Turn one campaign goal into a compact five-day sequence so you always know what to post next.",
+    title: "Posting rhythm built in",
+    content: "Stretch one content objective into a five-day content rhythm that stays focused.",
     icon: <CalendarIcon className="h-4 w-4" />,
   },
 ];
 
-const trustItems = [
+const principleCards = [
   {
-    title: "Free daily runway",
-    description: "Five generations every day gives you enough room to test angles before you spend.",
+    title: "Minimal by design",
+    description: "The interface is intentionally calm so the content work feels clearer and more professional.",
+    icon: <ShieldIcon className="h-5 w-5" />,
+  },
+  {
+    title: "Daily free runway",
+    description: "Five generations every day gives you enough space to test before paying.",
     icon: <GaugeIcon className="h-5 w-5" />,
   },
   {
-    title: "Launch-beta Pro flow",
-    description: "Upgrade with Stripe when you need unlimited output and faster campaign shipping.",
+    title: "Upgrade only when needed",
+    description: "Move into Pro when the pace of your content starts outgrowing the free cap.",
     icon: <BoltIcon className="h-5 w-5" />,
-  },
-  {
-    title: "Small-business focused",
-    description: "The messaging is tuned for local brands, service businesses, personal brands, and creators.",
-    icon: <ShieldIcon className="h-5 w-5" />,
   },
 ];
 
 export default function HomePage() {
   return (
     <MarketingShell>
-      <section className="relative flex min-h-[72vh] flex-col justify-center">
-        <div className="max-w-4xl space-y-8">
-          <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: "easeOut" }} className="space-y-6">
-            <p className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-cyan-100">
-              Free plan included
-            </p>
-            <div className="space-y-4">
-              <h1 className="max-w-4xl bg-gradient-to-r from-cyan-100 via-white to-pink-200 bg-clip-text text-5xl font-semibold tracking-tight text-transparent sm:text-7xl">
-                {siteConfig.heroTitle}
-              </h1>
-              <p className="max-w-3xl text-lg leading-8 text-slate-300 sm:text-xl">{siteConfig.heroSubtitle}</p>
-              <p className="max-w-3xl text-sm leading-7 text-slate-400 sm:text-base">{siteConfig.trustBadge}</p>
-            </div>
+      <section className="grid min-h-[76vh] gap-14 pt-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <Reveal className="space-y-7">
+          <div className="space-y-4">
+            <p className="editorial-label text-xs">Editorial AI Content Studio</p>
+            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-[#181614] sm:text-7xl">{siteConfig.heroTitle}</h1>
+            <p className="max-w-2xl text-lg leading-8 text-[#5f584f] sm:text-xl">{siteConfig.heroSubtitle}</p>
+            <p className="max-w-2xl text-sm leading-7 text-[#7a7269] sm:text-base">{siteConfig.trustBadge}</p>
+          </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-400 to-pink-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_40px_rgba(97,231,255,0.28)] transition hover:translate-y-[-2px]"
-              >
-                Start Free
-                <ArrowUpRightIcon className="h-4 w-4" />
-              </Link>
-              <UpgradeButton
-                label="Unlock Pro"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/12 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-cyan-300/35 hover:bg-cyan-400/10"
-              />
-            </div>
-          </motion.div>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]">
+              Start Free
+              <ArrowUpRightIcon className="h-4 w-4" />
+            </Link>
+            <UpgradeButton
+              label="Upgrade to Pro"
+              className="inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] transition hover:border-[#20584f]/20 hover:text-[#20584f]"
+            />
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0.1 }}
-            className="grid gap-4 pt-4 sm:grid-cols-3"
-          >
+          <div className="section-rule" />
+
+          <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { value: "5/day", label: "Free generations per browser" },
-              { value: "$29", label: "Pro launch price in USD" },
-              { value: "4 outputs", label: "Caption, idea, hashtags, calendar" },
+              { value: "5/day", label: "Free generations" },
+              { value: "$29", label: "Pro monthly plan" },
+              { value: "Live + demo", label: "Works with or without API keys" },
             ].map((stat) => (
-              <div key={stat.label} className="glass-panel rounded-[24px] p-5">
-                <p className="text-3xl font-semibold text-white">{stat.value}</p>
-                <p className="mt-2 text-sm text-slate-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
+                <p className="text-3xl font-semibold text-[#181614]">{stat.value}</p>
+                <p className="mt-2 text-sm text-[#6f685f]">{stat.label}</p>
               </div>
             ))}
-          </motion.div>
-        </div>
+          </div>
+        </Reveal>
 
-        <div className="pointer-events-none absolute inset-0">
-          <motion.div animate={{ y: [0, -18, 0] }} transition={{ duration: 6, repeat: Number.POSITIVE_INFINITY }} className="absolute left-[8%] top-[16%] h-28 w-28 rounded-full bg-cyan-400/15 blur-3xl" />
-          <motion.div animate={{ y: [0, 20, 0] }} transition={{ duration: 7, repeat: Number.POSITIVE_INFINITY }} className="absolute right-[10%] top-[30%] h-32 w-32 rounded-full bg-pink-500/15 blur-3xl" />
-        </div>
+        <Reveal delay={0.08}>
+          <SelfieHeroScene />
+        </Reveal>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-3">
-        {featureCards.map((feature, index) => (
-          <FloatingCard
-            key={feature.title}
-            title={feature.title}
-            content={feature.content}
-            icon={feature.icon}
-            delay={index * 0.1}
-            eyebrow="What you generate"
-          />
-        ))}
-      </section>
+      <Reveal className="space-y-8">
+        <div className="max-w-3xl space-y-4">
+          <p className="editorial-label text-xs">What it gives you</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-[#181614]">A cleaner way to turn one idea into content that looks ready to publish.</h2>
+          <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
+            The product is now built around restraint: fewer visual distractions, clearer hierarchy, and motion that supports the message instead of overwhelming it.
+          </p>
+        </div>
 
-      <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="grid gap-5 md:grid-cols-3">
+          {featureCards.map((feature, index) => (
+            <Reveal key={feature.title} delay={index * 0.06}>
+              <FloatingCard title={feature.title} content={feature.content} icon={feature.icon} eyebrow="Core output" />
+            </Reveal>
+          ))}
+        </div>
+      </Reveal>
+
+      <Reveal className="grid gap-10 lg:grid-cols-[1fr_0.95fr] lg:items-start">
         <div className="space-y-5">
-          <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Why it converts</p>
-          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">A fast funnel for getting from blank page to publish-ready content.</h2>
-          <p className="max-w-2xl text-base leading-7 text-slate-300">
-            AI Content Engine is built to make the first win feel immediate. You start free, generate real assets, then upgrade only when the free limit becomes too tight for your posting pace.
+          <p className="editorial-label text-xs">How the redesign works</p>
+          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">The landing page now behaves more like a premium editorial brand site than a loud SaaS demo.</h2>
+          <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
+            The selfie animation gives the page a signature moment, but the surrounding system stays restrained: off-white surfaces, darker typography, controlled accents, and reveal motion as you move through sections.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
-            {trustItems.map((item) => (
-              <div key={item.title} className="glass-panel rounded-[24px] p-5">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-100">
-                  {item.icon}
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-white">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{item.description}</p>
+            {principleCards.map((item) => (
+              <div key={item.title} className="rounded-[1.6rem] border border-black/6 bg-white p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6efeb] text-[#20584f]">{item.icon}</div>
+                <h3 className="mt-4 text-lg font-semibold text-[#181614]">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#6f685f]">{item.description}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="glass-panel rounded-[32px] p-8"
-        >
-          <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Outcome preview</p>
-          <h3 className="mt-4 text-2xl font-semibold text-white">Turn one business goal into a complete post package.</h3>
-          <div className="mt-6 space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Caption</p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">Make your audience feel like you read their mind, then guide them straight into a low-friction action.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Hook idea</p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">Use a short visual transformation with a first-second hook that makes viewers stop and watch.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Mini calendar</p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">Stretch a single campaign goal into five distinct daily post angles so your content feels consistent instead of repetitive.</p>
-            </div>
+        <div className="space-y-4 rounded-[2rem] border border-black/6 bg-white p-8 shadow-[0_20px_48px_rgba(24,22,20,0.06)]">
+          <p className="editorial-label text-xs">Flow</p>
+          <div className="space-y-5">
+            {[
+              {
+                step: "01",
+                title: "Describe the business and the goal",
+                text: "Give the dashboard a sharp brief so the output stays useful instead of generic.",
+              },
+              {
+                step: "02",
+                title: "Generate a content pack",
+                text: "Receive a caption, hook idea, hashtag set, and a short posting rhythm in one go.",
+              },
+              {
+                step: "03",
+                title: "Upgrade when momentum starts",
+                text: "Use the free plan for daily testing, then unlock Pro when your content cadence increases.",
+              },
+            ].map((item) => (
+              <div key={item.step} className="grid gap-3 border-b border-black/6 pb-5 last:border-b-0 last:pb-0 sm:grid-cols-[70px_1fr]">
+                <p className="text-sm font-semibold text-[#20584f]">{item.step}</p>
+                <div>
+                  <h3 className="text-lg font-semibold text-[#181614]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#6f685f]">{item.text}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </motion.div>
-      </section>
+        </div>
+      </Reveal>
 
-      <section className="space-y-8">
+      <Reveal className="space-y-8">
         <div className="max-w-3xl space-y-4">
-          <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Pricing</p>
-          <h2 className="text-4xl font-semibold tracking-tight text-white">Start with a real free tier, then move into Pro when your workflow needs more room.</h2>
-          <p className="text-base leading-7 text-slate-300">{siteConfig.pricingBlurb}</p>
+          <p className="editorial-label text-xs">Pricing</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-[#181614]">Free for daily testing. Pro when you want to remove the cap and move faster.</h2>
+          <p className="text-base leading-7 text-[#5f584f]">{siteConfig.pricingBlurb}</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {planConfigs.map((plan) => (
-            <PlanCard key={plan.key} plan={plan} featured={plan.key === "pro"} />
+          {planConfigs.map((plan, index) => (
+            <Reveal key={plan.key} delay={index * 0.06}>
+              <PlanCard plan={plan} featured={plan.key === "pro"} />
+            </Reveal>
           ))}
         </div>
-      </section>
+      </Reveal>
 
-      <section className="glass-panel rounded-[36px] p-8 sm:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+      <Reveal className="rounded-[2.3rem] border border-black/6 bg-white px-8 py-10 shadow-[0_24px_58px_rgba(24,22,20,0.06)] sm:px-10">
+        <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Launch faster</p>
-            <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">If the free limit helps you win, the Pro plan is ready when you are.</h2>
-            <p className="max-w-2xl text-base leading-7 text-slate-300">
-              Test content angles, learn what resonates, then unlock unlimited generation with the same dashboard flow. No complex onboarding, no bloated agency toolset, just faster social content output.
+            <p className="editorial-label text-xs">Ready when you are</p>
+            <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">A calmer, more professional product surface with motion that still feels alive.</h2>
+            <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
+              The landing page now leads with character, the dashboard keeps the work clear, and the entire product feels more composed from top to bottom.
             </p>
           </div>
-
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/12 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-cyan-300/35 hover:bg-cyan-400/10"
-            >
-              Try the Free Plan
+            <Link href="/dashboard" className="inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] transition hover:border-[#20584f]/20 hover:text-[#20584f]">
+              Try the New Free Plan
             </Link>
-            <UpgradeButton
-              label="Go Pro for $29/month"
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-400 to-pink-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_30px_rgba(97,231,255,0.22)] transition hover:translate-y-[-1px]"
-            />
+            <UpgradeButton label="Go Pro for $29/month" className="inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]" />
           </div>
         </div>
-      </section>
+      </Reveal>
     </MarketingShell>
   );
 }

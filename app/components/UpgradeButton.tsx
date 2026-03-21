@@ -39,7 +39,7 @@ export function UpgradeButton({ label, className, compact = false }: UpgradeButt
       <button type="button" onClick={startCheckout} disabled={isLoading} className={className}>
         {isLoading ? "Redirecting..." : label}
       </button>
-      {error && !compact ? <p className="text-xs text-rose-300">{error}</p> : null}
+      {error && !compact ? <p className="text-xs text-[#8b5b4d]">{error}</p> : null}
     </div>
   );
 }

@@ -160,9 +160,9 @@ function DashboardPageInner() {
   const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left today`;
 
   return (
-    <div className="relative min-h-screen text-white">
+    <div className="relative min-h-screen text-[#181614]">
       <CanvasBackground />
-      <div className="pointer-events-none fixed inset-0 -z-10 grid-glow opacity-45" />
+      <div className="pointer-events-none fixed inset-0 -z-10 paper-grid opacity-45" />
       <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} />
 
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
@@ -170,31 +170,31 @@ function DashboardPageInner() {
 
         <main className="space-y-5">
           {isLocked ? (
-            <div className="glass-panel rounded-[28px] border border-pink-300/20 p-5">
+            <div className="glass-panel rounded-[28px] p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.25em] text-pink-200">Daily free cap reached</p>
-                  <h2 className="text-2xl font-semibold text-white">You used all 5 free generations for today.</h2>
-                  <p className="max-w-2xl text-sm leading-6 text-slate-300">
+                  <p className="editorial-label text-xs">Daily free cap reached</p>
+                  <h2 className="text-2xl font-semibold text-[#181614]">You used all 5 free generations for today.</h2>
+                  <p className="max-w-2xl text-sm leading-6 text-[#5f584f]">
                     Upgrade to Pro to remove the browser-based limit and keep generating captions, TikTok hooks, hashtags, and content plans without waiting for tomorrow&apos;s reset.
                   </p>
                 </div>
                 <UpgradeButton
                   label="Upgrade to Pro for $29/month"
-                  className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-400 to-pink-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_28px_rgba(97,231,255,0.2)] transition hover:translate-y-[-1px]"
+                  className="inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]"
                 />
               </div>
             </div>
           ) : null}
 
           {notice ? (
-            <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm text-cyan-50">
+            <div className="rounded-2xl border border-black/6 bg-white/85 p-4 text-sm text-[#4f4942]">
               <span className="font-semibold">Status:</span> {notice}
             </div>
           ) : null}
 
           {error ? (
-            <div className="rounded-2xl border border-rose-300/20 bg-rose-500/10 p-4 text-sm text-rose-100">
+            <div className="rounded-2xl border border-black/6 bg-[#f8ebe6] p-4 text-sm text-[#7c5645]">
               <span className="font-semibold">Error:</span> {error}
             </div>
           ) : null}
@@ -209,12 +209,12 @@ function DashboardPageInner() {
           />
 
           {isLoading ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-cyan-300/25 bg-slate-900/70 p-5">
-              <div className="flex items-center gap-3 text-sm text-cyan-200">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-black/6 bg-white/85 p-5">
+              <div className="flex items-center gap-3 text-sm text-[#20584f]">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.2, ease: "linear" }}
-                  className="h-4 w-4 rounded-full border-2 border-cyan-300 border-t-transparent"
+                  className="h-4 w-4 rounded-full border-2 border-[#20584f] border-t-transparent"
                 />
                 Generating your content pack...
               </div>
@@ -248,17 +248,17 @@ function DashboardPageInner() {
           <div className="glass-panel rounded-[28px] p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-200">Launch beta notes</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Pro access is unlocked per browser in this first launch version.</h2>
+                <p className="editorial-label text-xs">Launch beta notes</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[#181614]">Pro access is unlocked per browser in this first launch version.</h2>
               </div>
               {plan === "pro" ? (
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#e6efeb] px-4 py-2 text-sm text-[#20584f]">
                   <CrownIcon className="h-4 w-4" />
                   Pro active here
                 </div>
               ) : null}
             </div>
-            <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-[#5f584f]">
               Authentication and synced accounts are intentionally out of scope for this pass, so the free limit and Pro unlock are handled locally to keep the launch experience fast and testable on localhost.
             </p>
           </div>
@@ -272,12 +272,12 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="relative min-h-screen bg-[#050816] text-white">
+        <div className="relative min-h-screen bg-[#f4f0e8] text-[#181614]">
           <CanvasBackground />
-          <div className="pointer-events-none fixed inset-0 -z-10 grid-glow opacity-45" />
+          <div className="pointer-events-none fixed inset-0 -z-10 paper-grid opacity-45" />
           <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4">
             <div className="glass-panel rounded-[28px] p-6 text-center">
-              <p className="text-sm text-slate-300">Loading dashboard...</p>
+              <p className="text-sm text-[#5f584f]">Loading dashboard...</p>
             </div>
           </div>
         </div>

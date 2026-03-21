@@ -15,27 +15,23 @@ type FloatingCardProps = {
 export function FloatingCard({ title, content, icon, delay = 0, eyebrow, isLocked = false }: FloatingCardProps) {
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ y: -8, scale: 1.02 }}
-      transition={{ duration: 0.55, ease: "easeOut", delay }}
-      className="group relative overflow-hidden rounded-[28px] border border-cyan-400/20 bg-slate-950/70 p-5 shadow-[0_0_35px_rgba(34,211,238,0.2)] backdrop-blur-xl"
+      initial={{ opacity: 0, y: 24, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: false, amount: 0.24 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.5, ease: "easeOut", delay }}
+      className="glass-panel relative overflow-hidden rounded-[28px] p-6"
     >
-      <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 5.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay }}
-        className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-2xl"
-      />
       <div className="relative space-y-3">
-        {eyebrow ? <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-200">{eyebrow}</p> : null}
-        <div className="flex items-center gap-3 text-cyan-200">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-400/40 bg-cyan-400/10">
+        {eyebrow ? <p className="editorial-label text-[11px]">{eyebrow}</p> : null}
+        <div className="flex items-center gap-3 text-[#20584f]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e6efeb]">
             {icon ?? <span className="text-base">+</span>}
           </span>
-          <h3 className="text-base font-semibold tracking-wide text-white">{title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-[#181614]">{title}</h3>
         </div>
-        <p className={`text-sm leading-relaxed ${isLocked ? "text-slate-500 blur-[2px]" : "text-slate-300"}`}>{content}</p>
-        {isLocked ? <div className="text-xs uppercase tracking-[0.22em] text-pink-300">Upgrade to reveal</div> : null}
+        <p className={`text-sm leading-7 ${isLocked ? "text-[#8a8278] blur-[2px]" : "text-[#5f584f]"}`}>{content}</p>
+        {isLocked ? <div className="text-xs uppercase tracking-[0.22em] text-[#20584f]">Upgrade to reveal</div> : null}
       </div>
     </motion.article>
   );

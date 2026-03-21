@@ -35,23 +35,15 @@ export function InputForm({
   };
 
   return (
-    <motion.form
-      onSubmit={submit}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="glass-panel space-y-5 rounded-[28px] p-6"
-    >
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:flex-row md:items-center md:justify-between">
+    <motion.form onSubmit={submit} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.38, ease: "easeOut" }} className="glass-panel space-y-5 rounded-[28px] p-6">
+      <div className="flex flex-col gap-3 rounded-[1.5rem] bg-[#f6f2eb] p-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-200">{currentPlan === "pro" ? "Pro plan active" : "Free plan active"}</p>
-          <p className="mt-2 text-sm text-slate-300">
-            {currentPlan === "pro"
-              ? "Unlimited generations unlocked for this browser."
-              : `${remainingFreeGenerations} of 5 free generations left today.`}
+          <p className="editorial-label text-xs">{currentPlan === "pro" ? "Pro plan active" : "Free plan active"}</p>
+          <p className="mt-2 text-sm text-[#5f584f]">
+            {currentPlan === "pro" ? "Unlimited generations are active in this browser." : `${remainingFreeGenerations} of 5 free generations left today.`}
           </p>
         </div>
-        <p className="max-w-sm text-xs leading-5 text-slate-400">Use focused prompts to get sharper captions, hooks, hashtags, and daily content sequencing.</p>
+        <p className="max-w-sm text-xs leading-5 text-[#7a7269]">Keep your brief specific and outcome-focused for the cleanest captions, hooks, and hashtags.</p>
       </div>
 
       {([
@@ -60,7 +52,7 @@ export function InputForm({
         ["goal", "Content Goal", "e.g. Drive foot traffic this weekend"],
       ] as const).map(([key, label, placeholder]) => (
         <label key={key} className="group block space-y-2">
-          <span className="text-sm font-medium text-slate-300 transition-colors group-focus-within:text-cyan-200">{label}</span>
+          <span className="text-sm font-medium text-[#433d36] transition-colors group-focus-within:text-[#20584f]">{label}</span>
           <motion.input
             whileFocus={{ scale: 1.01 }}
             transition={{ duration: 0.2 }}
@@ -69,21 +61,21 @@ export function InputForm({
             placeholder={placeholder}
             required
             disabled={isDisabled}
-            className="w-full rounded-2xl border border-slate-700/80 bg-slate-900/70 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-cyan-400/80 focus:shadow-[0_0_0_3px_rgba(34,211,238,0.15)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="w-full rounded-[1.2rem] border border-black/8 bg-[#fbfaf7] px-4 py-3 text-sm text-[#181614] placeholder:text-[#9b9288] outline-none transition focus:border-[#20584f]/30 focus:bg-white disabled:cursor-not-allowed disabled:opacity-55"
           />
         </label>
       ))}
 
       <motion.button
         type="submit"
-        whileHover={{ y: -2, boxShadow: "0 0 28px rgba(34, 211, 238, 0.45)" }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.99 }}
         disabled={isLoading || isDisabled}
-        className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-500 to-fuchsia-500 px-4 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-[#f8f4ee] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? "Generating..." : "Generate Content"}
       </motion.button>
-      <p className="text-xs leading-5 text-slate-500">
+      <p className="text-xs leading-5 text-[#7a7269]">
         {helperMessage || "Live provider uses OpenRouter when configured. Otherwise, the app serves polished demo content for localhost testing."}
       </p>
     </motion.form>

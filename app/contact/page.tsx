@@ -14,9 +14,9 @@ export default function ContactPage() {
   return (
     <MarketingShell>
       <section className="space-y-6 pt-8">
-        <p className="text-xs uppercase tracking-[0.28em] text-cyan-200">Contact</p>
-        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-white">Reach out for launch questions, partnerships, or Pro support.</h1>
-        <p className="max-w-3xl text-base leading-7 text-slate-300">
+        <p className="editorial-label text-xs">Contact</p>
+        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Reach out for launch questions, partnerships, or Pro support.</h1>
+        <p className="max-w-3xl text-base leading-7 text-[#5f584f]">
           This first release is intentionally lean. If you need help configuring Stripe, OpenRouter, or your launch setup, the fastest contact path is WhatsApp or email.
         </p>
       </section>
@@ -31,13 +31,13 @@ export default function ContactPage() {
               href={item.href}
               target="_blank"
               rel="noreferrer"
-              className="glass-panel rounded-[28px] p-6 transition hover:border-cyan-300/30 hover:bg-cyan-400/10"
+              className="glass-panel rounded-[28px] p-6 transition hover:border-[#20584f]/20 hover:bg-white"
             >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-100">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6efeb] text-[#20584f]">
                 <Icon className="h-5 w-5" />
               </span>
-              <h2 className="mt-4 text-xl font-semibold text-white">{item.label}</h2>
-              <p className="mt-2 text-sm text-slate-300">{item.value}</p>
+              <h2 className="mt-4 text-xl font-semibold text-[#181614]">{item.label}</h2>
+              <p className="mt-2 text-sm text-[#5f584f]">{item.value}</p>
             </a>
           );
         })}

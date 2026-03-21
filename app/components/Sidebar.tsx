@@ -16,23 +16,16 @@ const sections = [
 
 export function Sidebar({ currentPlan, remainingFreeGenerations }: SidebarProps) {
   return (
-    <motion.aside
-      initial={{ x: -30, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
-      className="glass-panel w-full rounded-[28px] p-5 md:w-72"
-    >
-      <div className="mb-5 rounded-2xl border border-cyan-300/15 bg-cyan-400/10 p-4">
-        <p className="text-xs uppercase tracking-[0.24em] text-cyan-200">Launch Plan</p>
-        <p className="mt-2 text-xl font-semibold text-white">{currentPlan}</p>
-        <p className="mt-2 text-sm leading-6 text-slate-300">
-          {currentPlan === "Pro"
-            ? "Unlimited generations unlocked on this browser."
-            : `${remainingFreeGenerations} free generations left today on this browser.`}
+    <motion.aside initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="glass-panel w-full rounded-[28px] p-5 md:w-72">
+      <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
+        <p className="editorial-label text-xs">Launch Plan</p>
+        <p className="mt-2 text-xl font-semibold text-[#181614]">{currentPlan}</p>
+        <p className="mt-2 text-sm leading-6 text-[#5f584f]">
+          {currentPlan === "Pro" ? "Unlimited generations unlocked on this browser." : `${remainingFreeGenerations} free generations left today on this browser.`}
         </p>
       </div>
 
-      <p className="mb-4 text-xs uppercase tracking-[0.22em] text-slate-400">Workspace</p>
+      <p className="mb-4 text-xs uppercase tracking-[0.22em] text-[#6f685f]">Workspace</p>
       <nav className="space-y-2">
         {sections.map((section) => {
           const Icon = section.icon;
@@ -40,28 +33,28 @@ export function Sidebar({ currentPlan, remainingFreeGenerations }: SidebarProps)
           return (
             <motion.button
               key={section.title}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex w-full items-center justify-between rounded-2xl border border-transparent px-3 py-3 text-left text-sm text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-400/10"
+              whileHover={{ x: 3 }}
+              whileTap={{ scale: 0.99 }}
+              className="flex w-full items-center justify-between rounded-[1.2rem] border border-transparent px-3 py-3 text-left text-sm text-[#3d3935] transition hover:border-black/6 hover:bg-[#f8f4ee]"
             >
               <span className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-cyan-100">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#e6efeb] text-[#20584f]">
                   <Icon className="h-4 w-4" />
                 </span>
                 {section.title}
               </span>
-              <span className="text-xs uppercase tracking-[0.22em] text-cyan-200">{section.status}</span>
+              <span className="text-xs uppercase tracking-[0.22em] text-[#20584f]">{section.status}</span>
             </motion.button>
           );
         })}
       </nav>
 
-      <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-        <div className="flex items-center gap-2 text-white">
-          <LockIcon className="h-4 w-4 text-cyan-200" />
+      <div className="mt-5 rounded-[1.5rem] border border-black/6 bg-white p-4 text-sm text-[#5f584f]">
+        <div className="flex items-center gap-2 text-[#181614]">
+          <LockIcon className="h-4 w-4 text-[#20584f]" />
           Soft launch gating
         </div>
-        <p className="mt-2 leading-6">Free limits are stored in browser storage for now. Full account sync comes in a later release.</p>
+        <p className="mt-2 leading-6">Free limits are still stored in browser storage. Account sync comes later.</p>
       </div>
     </motion.aside>
   );
