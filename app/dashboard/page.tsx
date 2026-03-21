@@ -181,7 +181,7 @@ function DashboardPageInner() {
                 </div>
                 <UpgradeButton
                   label="Upgrade to Pro for $29/month"
-                  className="inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]"
+                  className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
                 />
               </div>
             </div>

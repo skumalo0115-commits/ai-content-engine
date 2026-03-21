@@ -30,18 +30,18 @@ const featureCards = [
 
 const principleCards = [
   {
-    title: "Minimal by design",
-    description: "The interface is intentionally calm so the content work feels clearer and more professional.",
+    title: "Know what to post next",
+    description: "Use one business goal to map out your next caption, video angle, hashtags, and posting rhythm.",
     icon: <ShieldIcon className="h-5 w-5" />,
   },
   {
-    title: "Daily free runway",
-    description: "Five generations every day gives you enough space to test before paying.",
+    title: "Test ideas before you film",
+    description: "Try a few directions on the free plan first so you waste less time shooting content that misses.",
     icon: <GaugeIcon className="h-5 w-5" />,
   },
   {
-    title: "Upgrade only when needed",
-    description: "Move into Pro when the pace of your content starts outgrowing the free cap.",
+    title: "Scale when the pace increases",
+    description: "Upgrade only when you need more daily output or want to move through campaigns faster.",
     icon: <BoltIcon className="h-5 w-5" />,
   },
 ];
@@ -49,35 +49,38 @@ const principleCards = [
 export default function HomePage() {
   return (
     <MarketingShell>
-      <section className="grid min-h-[76vh] gap-14 pt-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+      <div className="pointer-events-none fixed inset-0 -z-[9] bg-[url('/social-wall.svg')] bg-cover bg-center opacity-[0.11] mix-blend-multiply [mask-image:linear-gradient(180deg,black_0%,black_70%,transparent_100%)]" />
+      <section className="relative grid min-h-[76vh] gap-14 overflow-hidden rounded-[2.4rem] pt-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <div className="pointer-events-none absolute inset-0 bg-[url('/social-wall.svg')] bg-cover bg-center opacity-[0.2] grayscale-[0.05] brightness-115 saturate-[0.78]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(244,240,232,0.58),rgba(244,240,232,0.86))]" />
         <Reveal className="space-y-7">
-          <div className="space-y-4">
+          <div className="relative space-y-4">
             <p className="editorial-label text-xs">Editorial AI Content Studio</p>
             <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-[#181614] sm:text-7xl">{siteConfig.heroTitle}</h1>
             <p className="max-w-2xl text-lg leading-8 text-[#5f584f] sm:text-xl">{siteConfig.heroSubtitle}</p>
             <p className="max-w-2xl text-sm leading-7 text-[#7a7269] sm:text-base">{siteConfig.trustBadge}</p>
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]">
-              Start Free
-              <ArrowUpRightIcon className="h-4 w-4" />
+          <div className="relative flex flex-col gap-4 sm:flex-row">
+            <Link href="/dashboard" className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]">
+              <span className="relative z-[1] text-white">Start Free</span>
+              <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
             </Link>
             <UpgradeButton
               label="Upgrade to Pro"
-              className="inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] transition hover:border-[#20584f]/20 hover:text-[#20584f]"
+              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
             />
           </div>
 
-          <div className="section-rule" />
+          <div className="relative section-rule" />
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="relative grid gap-4 sm:grid-cols-3">
             {[
               { value: "5/day", label: "Free generations" },
               { value: "$29", label: "Pro monthly plan" },
               { value: "Live + demo", label: "Works with or without API keys" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
+              <div key={stat.label} className="interactive-pop rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
                 <p className="text-3xl font-semibold text-[#181614]">{stat.value}</p>
                 <p className="mt-2 text-sm text-[#6f685f]">{stat.label}</p>
               </div>
@@ -85,7 +88,7 @@ export default function HomePage() {
           </div>
         </Reveal>
 
-        <Reveal delay={0.08}>
+        <Reveal className="relative" delay={0.08}>
           <SelfieHeroScene />
         </Reveal>
       </section>
@@ -95,7 +98,7 @@ export default function HomePage() {
           <p className="editorial-label text-xs">What it gives you</p>
           <h2 className="text-4xl font-semibold tracking-tight text-[#181614]">A cleaner way to turn one idea into content that looks ready to publish.</h2>
           <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
-            The product is now built around restraint: fewer visual distractions, clearer hierarchy, and motion that supports the message instead of overwhelming it.
+            Tell it what you sell, who you want to reach, and what result you want. It gives you a usable caption angle, a short-form content idea, a cleaner hashtag set, and a simple next-post rhythm you can actually work from.
           </p>
         </div>
 
@@ -110,14 +113,14 @@ export default function HomePage() {
 
       <Reveal className="grid gap-10 lg:grid-cols-[1fr_0.95fr] lg:items-start">
         <div className="space-y-5">
-          <p className="editorial-label text-xs">How the redesign works</p>
-          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">The landing page now behaves more like a premium editorial brand site than a loud SaaS demo.</h2>
+          <p className="editorial-label text-xs">Why this helps you</p>
+          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">Use the free plan to plan smarter content before you spend time filming, designing, or posting.</h2>
           <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
-            The selfie animation gives the page a signature moment, but the surrounding system stays restrained: off-white surfaces, darker typography, controlled accents, and reveal motion as you move through sections.
+            Instead of guessing what to post, you can walk away with a clearer caption angle, a short-form video hook, a useful hashtag set, and a simple posting direction that fits your goal.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             {principleCards.map((item) => (
-              <div key={item.title} className="rounded-[1.6rem] border border-black/6 bg-white p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
+              <div key={item.title} className="interactive-pop rounded-[1.6rem] border border-black/6 bg-white p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6efeb] text-[#20584f]">{item.icon}</div>
                 <h3 className="mt-4 text-lg font-semibold text-[#181614]">{item.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[#6f685f]">{item.description}</p>
@@ -133,17 +136,17 @@ export default function HomePage() {
               {
                 step: "01",
                 title: "Describe the business and the goal",
-                text: "Give the dashboard a sharp brief so the output stays useful instead of generic.",
+                text: "Give the tool a short, focused brief so the results are tailored to your business and audience.",
               },
               {
                 step: "02",
                 title: "Generate a content pack",
-                text: "Receive a caption, hook idea, hashtag set, and a short posting rhythm in one go.",
+                text: "Get a caption, a video idea, hashtags, and a mini posting plan in one clean batch.",
               },
               {
                 step: "03",
-                title: "Upgrade when momentum starts",
-                text: "Use the free plan for daily testing, then unlock Pro when your content cadence increases.",
+                title: "Move from DIY testing to faster output",
+                text: "Stay on the free plan while you test, then unlock Pro when you need more than the daily cap.",
               },
             ].map((item) => (
               <div key={item.step} className="grid gap-3 border-b border-black/6 pb-5 last:border-b-0 last:pb-0 sm:grid-cols-[70px_1fr]">
@@ -178,16 +181,16 @@ export default function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div className="space-y-4">
             <p className="editorial-label text-xs">Ready when you are</p>
-            <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">A calmer, more professional product surface with motion that still feels alive.</h2>
+            <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">Start with tomorrow&apos;s post, then build the rest of the week from there.</h2>
             <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
-              The landing page now leads with character, the dashboard keeps the work clear, and the entire product feels more composed from top to bottom.
+              Use the free plan to test a caption direction, pull a reel hook, and line up your next few posts before you open Canva, set up your tripod, or record your first clip.
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
-            <Link href="/dashboard" className="inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] transition hover:border-[#20584f]/20 hover:text-[#20584f]">
-              Try the New Free Plan
+            <Link href="/dashboard" className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]">
+              <span className="relative z-[1]">Try the New Free Plan</span>
             </Link>
-            <UpgradeButton label="Go Pro for $29/month" className="inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]" />
+            <UpgradeButton label="Go Pro for $29/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
           </div>
         </div>
       </Reveal>

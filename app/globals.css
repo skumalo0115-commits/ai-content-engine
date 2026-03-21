@@ -90,3 +90,117 @@ button {
   width: 100%;
   background: linear-gradient(90deg, transparent 0%, rgba(24, 22, 20, 0.12) 18%, rgba(24, 22, 20, 0.12) 82%, transparent 100%);
 }
+
+.interactive-pop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.interactive-pop::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(180px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255, 255, 255, 0.72), transparent 55%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.interactive-pop:hover {
+  transform: translateY(-4px) scale(1.024);
+  box-shadow: 0 24px 44px rgba(24, 22, 20, 0.1);
+}
+
+.interactive-pop:hover::before,
+.interactive-pop:focus-visible::before {
+  opacity: 1;
+}
+
+.nav-pill {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.nav-pill::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(140px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255, 255, 255, 0.86), transparent 58%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.nav-pill:hover {
+  border-color: rgba(32, 88, 79, 0.22);
+  background: rgba(255, 255, 255, 0.94);
+  color: #181614;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(24, 22, 20, 0.06);
+}
+
+.nav-pill:hover::before,
+.nav-pill:focus-visible::before {
+  opacity: 1;
+}
+
+.footer-link-pop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.footer-link-pop::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(120px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255, 255, 255, 0.46), transparent 58%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.footer-link-pop:hover {
+  border-color: rgba(24, 22, 20, 0.08);
+  background: rgba(24, 22, 20, 0.12);
+  color: #181614;
+  transform: translateY(-2px);
+}
+
+.footer-link-pop:hover::before,
+.footer-link-pop:focus-visible::before {
+  opacity: 1;
+}

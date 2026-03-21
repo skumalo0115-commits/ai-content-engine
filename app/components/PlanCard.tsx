@@ -18,7 +18,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, amount: 0.24 }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className={`glass-panel relative overflow-hidden rounded-[28px] p-7 ${featured ? "border-[#20584f]/15 bg-[#f8fbfa]" : ""}`}
+      className={`glass-panel interactive-pop relative overflow-hidden rounded-[28px] p-7 ${featured ? "border-[#20584f]/15 bg-[#f8fbfa]" : ""}`}
     >
       {featured ? <div className="accent-chip absolute right-4 top-4 rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.24em]">Recommended</div> : null}
 
@@ -41,11 +41,11 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         </div>
 
         {plan.key === "free" ? (
-          <Link href="/dashboard" className="inline-flex w-full items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] transition hover:border-[#20584f]/20 hover:text-[#20584f]">
+          <Link href="/dashboard" className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]">
             {plan.ctaLabel}
           </Link>
         ) : (
-          <UpgradeButton label={plan.ctaLabel} className="inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]" />
+          <UpgradeButton label={plan.ctaLabel} className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
         )}
       </div>
     </motion.article>

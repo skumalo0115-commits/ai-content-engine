@@ -1,0 +1,84 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#10203A"/>
+  <rect width="1600" height="900" fill="url(#wash)"/>
+  <g opacity="0.22">
+    <path d="M0 88H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 178H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 268H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 358H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 448H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 538H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 628H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 718H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M0 808H1600" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M200 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M400 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M600 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M800 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M1000 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M1200 0V900" stroke="#DCE3EE" stroke-width="2"/>
+    <path d="M1400 0V900" stroke="#DCE3EE" stroke-width="2"/>
+  </g>
+  <g opacity="0.82" filter="url(#glowPink)">
+    <rect x="118" y="110" width="252" height="168" rx="44" stroke="#FF6A7F" stroke-width="16"/>
+    <path d="M214 154L308 194L214 236V154Z" stroke="#FF6A7F" stroke-width="16" stroke-linejoin="round"/>
+  </g>
+  <g opacity="0.8" filter="url(#glowViolet)">
+    <rect x="168" y="418" width="164" height="164" rx="40" stroke="#FF78D1" stroke-width="16"/>
+    <circle cx="250" cy="500" r="36" stroke="#FF78D1" stroke-width="16"/>
+    <circle cx="304" cy="446" r="10" fill="#FF78D1"/>
+  </g>
+  <g opacity="0.78" filter="url(#glowBlue)">
+    <path d="M612 368C690 368 754 432 754 510C754 649 613 718 490 604C437 555 429 470 470 418C508 370 569 352 612 368Z" stroke="#6FD8FF" stroke-width="18"/>
+    <path d="M516 583C610 583 719 504 752 415C786 430 824 431 860 411C842 468 799 536 743 580C668 639 579 650 516 583Z" fill="#6FD8FF" fill-opacity="0.22"/>
+  </g>
+  <g opacity="0.8" filter="url(#glowRose)">
+    <path d="M1188 138C1188 116 1206 98 1228 98H1360C1382 98 1400 116 1400 138V286C1400 308 1382 326 1360 326H1228C1206 326 1188 308 1188 286V138Z" stroke="#FF86A6" stroke-width="16"/>
+    <path d="M1316 148V272" stroke="#FF86A6" stroke-width="16" stroke-linecap="round"/>
+    <path d="M1316 206C1269 206 1246 228 1246 269C1246 312 1276 330 1316 330" stroke="#FF86A6" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.8" filter="url(#glowGreen)">
+    <path d="M1040 382C1115 382 1176 443 1176 518C1176 593 1115 654 1040 654C965 654 904 593 904 518C904 443 965 382 1040 382Z" stroke="#9CFF8D" stroke-width="16"/>
+    <path d="M981 647L954 705L1032 674" stroke="#9CFF8D" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g opacity="0.74" filter="url(#glowIndigo)">
+    <path d="M566 190H694V240C694 302 643 353 581 353H566V190Z" stroke="#96A7FF" stroke-width="16"/>
+    <path d="M639 190V140" stroke="#96A7FF" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.72" filter="url(#glowMint)">
+    <path d="M1120 224L1168 188L1206 205L1179 241L1192 290L1141 269L1101 301L1098 250L1054 224L1102 207L1120 163L1150 207" stroke="#82FFE1" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+  <g opacity="0.72" filter="url(#glowGold)">
+    <path d="M785 124L828 162L874 139L861 192L903 226L849 232L829 283L808 232L754 226L797 192L785 124Z" stroke="#FFC65B" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+  <defs>
+    <radialGradient id="wash" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(800 450) rotate(90) scale(560 980)">
+      <stop stop-color="#1C3258"/>
+      <stop offset="1" stop-color="#0A1528"/>
+    </radialGradient>
+    <filter id="glowPink" x="72" y="64" width="344" height="260" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowViolet" x="120" y="370" width="260" height="260" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowBlue" x="414" y="334" width="490" height="370" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowRose" x="1142" y="52" width="304" height="324" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowGreen" x="856" y="334" width="368" height="418" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowIndigo" x="518" y="92" width="224" height="309" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="glowMint" x="1006" y="115" width="247" height="234" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="glowGold" x="706" y="76" width="246" height="255" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+</svg>

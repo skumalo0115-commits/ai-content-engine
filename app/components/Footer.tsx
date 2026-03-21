@@ -28,7 +28,7 @@ export function Footer() {
                   href={link.href}
                   target={link.href.startsWith("/") ? undefined : "_blank"}
                   rel={link.href.startsWith("/") ? undefined : "noreferrer"}
-                  className="inline-flex items-center gap-2 rounded-full border border-black/6 bg-white px-3 py-2 text-sm text-[#4d463f] transition hover:border-[#20584f]/20 hover:text-[#20584f]"
+                  className="interactive-pop inline-flex items-center gap-2 rounded-full border border-black/6 bg-white px-3 py-2 text-sm text-[#4d463f] hover:border-[#20584f]/20 hover:text-[#181614]"
                 >
                   <Icon className="h-4 w-4" />
                   {link.label}
@@ -42,7 +42,7 @@ export function Footer() {
           <p className="text-sm font-semibold text-[#181614]">Company</p>
           <div className="flex flex-col gap-2 text-sm text-[#6f685f]">
             {footerPageLinks.map((link) => (
-              <Link key={link.label} href={link.href} className="transition hover:text-[#20584f]">
+              <Link key={link.label} href={link.href} className="footer-link-pop transition hover:text-[#181614]">
                 {link.label}
               </Link>
             ))}
@@ -52,16 +52,16 @@ export function Footer() {
         <div className="space-y-3 text-sm text-[#6f685f]">
           <p className="font-semibold text-[#181614]">Launch Contact</p>
           <p>{siteConfig.email}</p>
-          <a href={siteConfig.phoneHref} className="block transition hover:text-[#20584f]">
+          <a href={siteConfig.phoneHref} className="footer-link-pop -ml-2 inline-block transition hover:text-[#181614]">
             {siteConfig.phoneDisplay}
           </a>
-          <p>Minimal visual system. USD pricing. Browser-based Pro unlock for launch.</p>
+          <p>Need help choosing a plan or setting up your first content brief? Reach out and we&apos;ll point you in the right direction.</p>
         </div>
       </div>
 
       <div className="border-t border-black/6">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-[#7a7269] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>© {new Date().getFullYear()} {siteConfig.companyName}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {siteConfig.companyName}. All rights reserved.</p>
           <p>Starter launch documents and support links are included for first release use.</p>
         </div>
       </div>

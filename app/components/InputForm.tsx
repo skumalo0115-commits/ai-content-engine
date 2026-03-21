@@ -71,7 +71,7 @@ export function InputForm({
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.99 }}
         disabled={isLoading || isDisabled}
-        className="w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-[#f8f4ee] disabled:cursor-not-allowed disabled:opacity-60"
+        className="interactive-pop w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? "Generating..." : "Generate Content"}
       </motion.button>

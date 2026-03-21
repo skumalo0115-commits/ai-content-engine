@@ -26,11 +26,11 @@ export function Navbar({ currentPlan, usageLabel }: NavbarProps) {
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-[#4d463f] md:flex">
             {primaryNavLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="transition hover:text-[#181614]">
+              <Link key={link.href} href={link.href} className="nav-pill">
                 {link.label}
               </Link>
             ))}
-            <Link href="/dashboard" className="transition hover:text-[#181614]">
+            <Link href="/dashboard" className="nav-pill">
               Dashboard
             </Link>
           </nav>
@@ -46,13 +46,13 @@ export function Navbar({ currentPlan, usageLabel }: NavbarProps) {
               {currentPlan}
             </div>
           ) : null}
-          <Link href="/dashboard" className="hidden rounded-full border border-black/6 bg-white px-4 py-2 text-sm font-medium text-[#181614] transition hover:border-[#20584f]/30 hover:text-[#20584f] sm:inline-flex">
-            Start Free
+          <Link href="/dashboard" className="interactive-pop hidden rounded-full border border-black/6 bg-white px-4 py-2 text-sm font-medium text-[#181614] hover:border-[#20584f]/30 hover:text-[#181614] sm:inline-flex">
+            <span className="relative z-[1]">Start Free</span>
           </Link>
           <UpgradeButton
             compact
             label="Upgrade"
-            className="inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-[#f8f4ee] transition hover:bg-[#2b2723]"
+            className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
           />
         </div>
       </div>

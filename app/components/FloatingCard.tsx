@@ -20,7 +20,7 @@ export function FloatingCard({ title, content, icon, delay = 0, eyebrow, isLocke
       viewport={{ once: false, amount: 0.24 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.5, ease: "easeOut", delay }}
-      className="glass-panel relative overflow-hidden rounded-[28px] p-6"
+      className="glass-panel interactive-pop relative overflow-hidden rounded-[28px] p-6"
     >
       <div className="relative space-y-3">
         {eyebrow ? <p className="editorial-label text-[11px]">{eyebrow}</p> : null}

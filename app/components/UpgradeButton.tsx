@@ -37,7 +37,7 @@ export function UpgradeButton({ label, className, compact = false }: UpgradeButt
   return (
     <div className={compact ? undefined : "space-y-2"}>
       <button type="button" onClick={startCheckout} disabled={isLoading} className={className}>
-        {isLoading ? "Redirecting..." : label}
+        <span className="relative z-[1]">{isLoading ? "Redirecting..." : label}</span>
       </button>
       {error && !compact ? <p className="text-xs text-[#8b5b4d]">{error}</p> : null}
     </div>
