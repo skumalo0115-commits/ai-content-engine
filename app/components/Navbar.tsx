@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { primaryNavLinks, siteConfig } from "@/app/lib/site";
 import { useAuth } from "./AuthProvider";
-import { CrownIcon } from "./Icons";
+import { BrandLogoIcon, CrownIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
 
 type NavbarProps = {
@@ -40,7 +40,8 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
     >
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold tracking-[0.28em] text-[#20584f]">
+          <Link href="/" className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-[#20584f]">
+            <BrandLogoIcon className="h-9 w-9" />
             {siteConfig.name.toUpperCase()}
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-[#4d463f] md:flex">

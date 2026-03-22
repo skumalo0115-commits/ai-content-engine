@@ -2,6 +2,7 @@
 
 import { createContext, type FormEvent, useContext, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
   firstName: string;
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
   const [form, setForm] = useState(() => getInitialForm("signup"));
+  const [showPassword, setShowPassword] = useState(false);
   const pendingRequestRef = useRef<AuthRequest | null>(null);
 
   const closeModal = () => {
@@ -123,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setForm(getInitialForm(nextMode, user));
     setError(null);
     setGoogleNotice(null);
+    setShowPassword(false);
     setIsOpen(true);
   };
 
@@ -226,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setForm(getInitialForm(nextMode, user));
     setError(null);
     setGoogleNotice(null);
+    setShowPassword(false);
   };
 
   const value: AuthContextValue = {
@@ -281,7 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               onClick={continueWithGoogle}
               className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614]"
             >
-              <span className="text-base">G</span>
+              <GoogleIcon className="h-5 w-5" />
               Continue with Google
             </button>
 
@@ -300,7 +304,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       value={form.firstName}
                       onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
                       className="w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-[#181614] outline-none transition focus:border-[#20584f]/30"
-                      placeholder="Sbahle"
+                      placeholder="Jonny"
                     />
                   </label>
                   <label className="space-y-2">
@@ -309,7 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       value={form.lastName}
                       onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))}
                       className="w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-[#181614] outline-none transition focus:border-[#20584f]/30"
-                      placeholder="Kumalo"
+                      placeholder="Bonny"
                     />
                   </label>
                 </div>
@@ -351,13 +355,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               <label className="space-y-2">
                 <span className="text-sm font-medium text-[#423c35]">Password</span>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                  className="w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-[#181614] outline-none transition focus:border-[#20584f]/30"
-                  placeholder={mode === "signup" ? "Create a password" : "Enter your password"}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                    className="w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 pr-12 text-sm text-[#181614] outline-none transition focus:border-[#20584f]/30"
+                    placeholder={mode === "signup" ? "Create a password" : "Enter your password"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f685f]"
+                  >
+                    {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
+                </div>
               </label>
 
               {error ? <p className="text-sm text-[#9c5b43]">{error}</p> : null}

@@ -52,7 +52,7 @@ export default function HomePage() {
   return (
     <MarketingShell>
       <div
-        className="pointer-events-none fixed inset-0 -z-[9] scale-110 bg-cover bg-center blur-[20px]"
+        className="pointer-events-none fixed inset-0 -z-[9] bg-cover bg-center"
         style={{
           backgroundImage:
             "url('https://i0.wp.com/read.crowdfireapp.com/wp-content/uploads/2022/03/Content-Diversification_-8-Social-Media-Content-Types-and-How-to-Use-Them.png?fit=675%2C450&ssl=1')",
