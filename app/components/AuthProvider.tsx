@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type FormEvent, useContext, useRef, useState } from "react";
+import { createContext, type FormEvent, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
@@ -21,6 +21,7 @@ type AuthMode = "signin" | "signup";
 type AuthRequest = {
   mode?: AuthMode;
   redirectTo?: string;
+  closeRedirectTo?: string;
   onSuccess?: () => void;
 };
 
@@ -95,18 +96,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [showPassword, setShowPassword] = useState(false);
   const pendingRequestRef = useRef<AuthRequest | null>(null);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
+    const closeRedirectTo = pendingRequestRef.current?.closeRedirectTo;
+    pendingRequestRef.current = null;
     setIsOpen(false);
     setError(null);
     setGoogleNotice(null);
-  };
+    setShowPassword(false);
 
-  const continueAfterAuth = (authenticatedUser: AuthUser) => {
+    if (closeRedirectTo) {
+      router.push(closeRedirectTo);
+    }
+  }, [router]);
+
+  const continueAfterAuth = useCallback((authenticatedUser: AuthUser) => {
     setUser(authenticatedUser);
     window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authenticatedUser));
     const pending = pendingRequestRef.current;
     pendingRequestRef.current = null;
-    closeModal();
+    setIsOpen(false);
+    setError(null);
+    setGoogleNotice(null);
+    setShowPassword(false);
 
     if (pending?.onSuccess) {
       pending.onSuccess();
@@ -116,9 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (pending?.redirectTo) {
       router.push(pending.redirectTo);
     }
-  };
+  }, [router]);
 
-  const openAuthModal = (request?: AuthRequest) => {
+  const openAuthModal = useCallback((request?: AuthRequest) => {
     const nextMode = request?.mode || "signup";
     pendingRequestRef.current = request || null;
     setMode(nextMode);
@@ -127,9 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setGoogleNotice(null);
     setShowPassword(false);
     setIsOpen(true);
-  };
+  }, [user]);
 
-  const runAuthenticated = (request?: AuthRequest) => {
+  const runAuthenticated = useCallback((request?: AuthRequest) => {
     if (user) {
       if (request?.onSuccess) {
         request.onSuccess();
@@ -144,15 +155,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     openAuthModal(request);
-  };
+  }, [openAuthModal, router, user]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     window.localStorage.removeItem(SESSION_STORAGE_KEY);
     router.push("/");
-  };
+  }, [router]);
 
-  const updateProfile = (updates: Partial<AuthUser>) => {
+  const updateProfile = useCallback((updates: Partial<AuthUser>) => {
     setUser((currentUser) => {
       if (!currentUser) {
         return currentUser;
@@ -173,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return nextUser;
     });
-  };
+  }, []);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -219,27 +230,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     continueAfterAuth(toUser(account));
   };
 
-  const continueWithGoogle = () => {
+  const continueWithGoogle = useCallback(() => {
     setError(null);
     setGoogleNotice("Google sign-in is ready in the UI, but it still needs NEXT_PUBLIC_GOOGLE_CLIENT_ID before it can complete a live Google login.");
-  };
+  }, []);
 
-  const switchMode = (nextMode: AuthMode) => {
+  const switchMode = useCallback((nextMode: AuthMode) => {
     setMode(nextMode);
     setForm(getInitialForm(nextMode, user));
     setError(null);
     setGoogleNotice(null);
     setShowPassword(false);
-  };
+  }, [user]);
 
-  const value: AuthContextValue = {
-    user,
-    isAuthenticated: Boolean(user),
-    openAuthModal,
-    runAuthenticated,
-    logout,
-    updateProfile,
-  };
+  const value: AuthContextValue = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      openAuthModal,
+      runAuthenticated,
+      logout,
+      updateProfile,
+    }),
+    [logout, openAuthModal, runAuthenticated, updateProfile, user],
+  );
 
   return (
     <AuthContext.Provider value={value}>

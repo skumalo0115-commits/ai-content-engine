@@ -97,7 +97,7 @@ function DashboardPageInner() {
 
   useEffect(() => {
     if (!user) {
-      openAuthModal({ mode: "signup", redirectTo: "/dashboard" });
+      openAuthModal({ mode: "signup", redirectTo: "/dashboard", closeRedirectTo: "/" });
     }
   }, [openAuthModal, user]);
 
