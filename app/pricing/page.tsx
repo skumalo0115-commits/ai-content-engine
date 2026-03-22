@@ -5,6 +5,11 @@ import { planConfigs, siteConfig } from "@/app/lib/site";
 export default function PricingPage() {
   return (
     <MarketingShell>
+      <div
+        className="pointer-events-none fixed inset-0 -z-[9] bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero-slide-4.png')" }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(244,240,232,0.84)]" />
       <section className="space-y-6 pt-8">
         <p className="editorial-label text-xs">Pricing</p>
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Start free, move into Pro when the daily cap stops being enough.</h1>

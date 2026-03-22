@@ -13,6 +13,11 @@ const contactItems = [
 export default function ContactPage() {
   return (
     <MarketingShell>
+      <div
+        className="pointer-events-none fixed inset-0 -z-[9] bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero-slide-1.png')" }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(244,240,232,0.84)]" />
       <section className="space-y-6 pt-8">
         <p className="editorial-label text-xs">Contact</p>
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Reach out for launch questions, partnerships, or Pro support.</h1>

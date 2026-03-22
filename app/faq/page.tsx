@@ -4,6 +4,11 @@ import { faqItems } from "@/app/lib/site";
 export default function FaqPage() {
   return (
     <MarketingShell>
+      <div
+        className="pointer-events-none fixed inset-0 -z-[9] bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero-slide-2.png')" }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(244,240,232,0.84)]" />
       <section className="space-y-6 pt-8">
         <p className="editorial-label text-xs">FAQ</p>
         <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-[#181614]">Answers for the first-launch version of AI Content Engine.</h1>

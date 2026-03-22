@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CanvasBackground } from "@/app/components/CanvasBackground";
+import { useAuth } from "@/app/components/AuthProvider";
 import { FloatingCard } from "@/app/components/FloatingCard";
 import { InputForm } from "@/app/components/InputForm";
 import { Navbar } from "@/app/components/Navbar";
@@ -18,23 +18,23 @@ import { BoltIcon, CalendarIcon, CrownIcon, HashIcon, SparkIcon } from "../compo
 const starterCards: GeneratedItem[] = [
   {
     type: "caption",
-    title: "Instagram Caption",
-    content: "Lead with a bold promise, make your audience feel understood, then invite them into the next step with a clear CTA.",
+    title: "Instagram Caption Strategy",
+    content: "Create captions that open with a sharp hook, explain the offer clearly, and push viewers toward comments, saves, or profile clicks.",
   },
   {
     type: "idea",
-    title: "TikTok / Reel Idea",
-    content: "Use a quick transformation hook that shows the problem first and your offer as the satisfying fix.",
+    title: "TikTok and Reel Concepts",
+    content: "Turn one business goal into short-form video angles, opening hooks, scene ideas, and creator-style talking points you can film fast.",
   },
   {
     type: "hashtags",
-    title: "Hashtag Stack",
-    content: "#SmallBusinessMarketing #ContentEngine #GrowthContent #LaunchWithAI #SocialMediaSystem",
+    title: "Platform-Specific Hashtags",
+    content: "Generate cleaner hashtag sets that support discoverability on Instagram while still matching the offer, audience, and posting goal.",
   },
   {
     type: "calendar",
-    title: "Mini Content Plan",
-    content: "Day 1 authority. Day 2 proof. Day 3 behind the scenes. Day 4 offer breakdown. Day 5 direct CTA.",
+    title: "Weekly Posting Direction",
+    content: "Map one campaign into a practical posting rhythm for TikTok, Instagram feed posts, story prompts, and CTA-based follow-up content.",
   },
 ];
 
@@ -61,13 +61,14 @@ const iconMap: Record<GeneratedItemType, ReactNode> = {
 function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, openAuthModal } = useAuth();
   const [cards, setCards] = useState<GeneratedItem[]>(starterCards);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>("Live AI uses OpenRouter when configured. Demo fallback stays available during localhost setup.");
-  const [sourceLabel, setSourceLabel] = useState<string>("Demo fallback ready");
+  const [notice, setNotice] = useState<string | null>("Connect your OpenRouter key to generate live captions, TikTok concepts, hashtag stacks, and content plans.");
+  const [sourceLabel, setSourceLabel] = useState<string>("Platform playbook");
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
@@ -93,6 +94,12 @@ function DashboardPageInner() {
   useEffect(() => {
     syncClientState();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      openAuthModal({ mode: "signup", redirectTo: "/dashboard" });
+    }
+  }, [openAuthModal, user]);
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -141,14 +148,10 @@ function DashboardPageInner() {
 
       startTransition(() => {
         setCards(data.items);
-        setSourceLabel(data.source === "openrouter" ? `Live AI: ${data.meta?.model || "OpenRouter"}` : "Demo fallback");
+        setSourceLabel(`Live AI: ${data.meta?.model || "OpenRouter"}`);
       });
 
-      setNotice(
-        data.source === "openrouter"
-          ? "Live OpenRouter generation completed successfully."
-          : "Demo fallback generated content because your live API key is not configured yet.",
-      );
+      setNotice("Live OpenRouter generation completed successfully.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate content right now.");
     } finally {
@@ -161,9 +164,12 @@ function DashboardPageInner() {
 
   return (
     <div className="relative min-h-screen text-[#181614]">
-      <CanvasBackground />
-      <div className="pointer-events-none fixed inset-0 -z-10 paper-grid opacity-45" />
-      <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} />
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero-slide-3.png')" }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
+      <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} />
 
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
         <Sidebar currentPlan={plan === "pro" ? "Pro" : "Free"} remainingFreeGenerations={remainingFreeGenerations} />
@@ -273,8 +279,11 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <div className="relative min-h-screen bg-[#f4f0e8] text-[#181614]">
-          <CanvasBackground />
-          <div className="pointer-events-none fixed inset-0 -z-10 paper-grid opacity-45" />
+          <div
+            className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
+            style={{ backgroundImage: "url('/hero-slide-3.png')" }}
+          />
+          <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
           <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4">
             <div className="glass-panel rounded-[28px] p-6 text-center">
               <p className="text-sm text-[#5f584f]">Loading dashboard...</p>

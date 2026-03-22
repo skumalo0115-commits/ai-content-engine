@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "./AuthProvider";
 
 type UpgradeButtonProps = {
   label: string;
@@ -11,6 +12,7 @@ type UpgradeButtonProps = {
 export function UpgradeButton({ label, className, compact = false }: UpgradeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { runAuthenticated } = useAuth();
 
   async function startCheckout() {
     setIsLoading(true);
@@ -36,7 +38,12 @@ export function UpgradeButton({ label, className, compact = false }: UpgradeButt
 
   return (
     <div className={compact ? undefined : "space-y-2"}>
-      <button type="button" onClick={startCheckout} disabled={isLoading} className={className}>
+      <button
+        type="button"
+        onClick={() => runAuthenticated({ onSuccess: () => void startCheckout(), mode: "signup" })}
+        disabled={isLoading}
+        className={className}
+      >
         <span className="relative z-[1]">{isLoading ? "Redirecting..." : label}</span>
       </button>
       {error && !compact ? <p className="text-xs text-[#8b5b4d]">{error}</p> : null}

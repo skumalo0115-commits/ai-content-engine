@@ -23,48 +23,6 @@ export function validateGeneratePayload(payload: GeneratePayload) {
   return { businessType, targetAudience, goal };
 }
 
-function buildHashtags(businessType: string, targetAudience: string, goal: string) {
-  const businessToken = businessType.replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/\s+/g, "");
-  const audienceToken = targetAudience.split(" ").slice(0, 2).join("");
-  const goalToken = goal.split(" ").slice(0, 2).join("");
-
-  return [
-    `#${businessToken || "SmallBusiness"}`,
-    `#${audienceToken || "TargetAudience"}`,
-    `#${goalToken || "GrowthGoal"}`,
-    "#SmallBusinessMarketing",
-    "#ContentEngine",
-    "#SocialMediaGrowth",
-  ].join(" ");
-}
-
-export function buildDemoItems(payload: GeneratePayload): GeneratedItem[] {
-  const { businessType, targetAudience, goal } = validateGeneratePayload(payload);
-
-  return [
-    {
-      type: "caption",
-      title: `${businessType} Caption`,
-      content: `Turn casual scrollers into loyal customers with a post that speaks directly to ${targetAudience}. Show the human side of your ${businessType.toLowerCase()} brand, tease the result people want, and end with a simple CTA built around ${goal.toLowerCase()}.`,
-    },
-    {
-      type: "idea",
-      title: "TikTok / Reel Idea",
-      content: `Film a quick before-and-after style clip that shows how your ${businessType.toLowerCase()} solves a real customer need. Open with a bold hook for ${targetAudience}, keep the transformation visual, and finish by inviting viewers to act on ${goal.toLowerCase()}.`,
-    },
-    {
-      type: "hashtags",
-      title: "Hashtag Stack",
-      content: buildHashtags(businessType, targetAudience, goal),
-    },
-    {
-      type: "calendar",
-      title: "Mini Content Plan",
-      content: `Day 1: authority post. Day 2: customer pain-point hook. Day 3: behind-the-scenes trust builder. Day 4: testimonial or proof. Day 5: direct CTA push focused on ${goal.toLowerCase()}.`,
-    },
-  ];
-}
-
 function extractContentText(content: unknown) {
   if (typeof content === "string") {
     return content;
@@ -138,7 +96,7 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    return null;
+    throw new Error("OpenRouter is required. Add OPENROUTER_API_KEY to enable live content generation.");
   }
 
   const validated = validateGeneratePayload(payload);
@@ -198,20 +156,8 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
 
 export async function generateContent(payload: GeneratePayload): Promise<GenerateContentResponse> {
   const liveResponse = await generateOpenRouterItems(payload);
-
-  if (liveResponse) {
-    return {
-      ...liveResponse,
-      remainingFreeGenerations: null,
-    };
-  }
-
   return {
-    source: "demo",
-    items: buildDemoItems(payload),
+    ...liveResponse,
     remainingFreeGenerations: null,
-    meta: {
-      model: "demo-fallback",
-    },
   };
 }

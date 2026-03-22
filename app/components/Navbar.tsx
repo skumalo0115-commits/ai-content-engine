@@ -2,16 +2,35 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { primaryNavLinks, siteConfig } from "@/app/lib/site";
+import { useAuth } from "./AuthProvider";
 import { CrownIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
 
 type NavbarProps = {
   currentPlan?: string;
   usageLabel?: string;
+  showStartFree?: boolean;
 };
 
-export function Navbar({ currentPlan, usageLabel }: NavbarProps) {
+export function Navbar({ currentPlan, usageLabel, showStartFree = true }: NavbarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, runAuthenticated, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const initials = useMemo(() => {
+    if (!user) {
+      return "";
+    }
+
+    const first = user.firstName?.trim().charAt(0) || "";
+    const last = user.lastName?.trim().charAt(0) || "";
+    return `${first}${last}`.toUpperCase() || user.email.slice(0, 2).toUpperCase();
+  }, [user]);
+  const navLinks = primaryNavLinks.filter((link) => !(pathname === "/" && link.href === "/"));
+
   return (
     <motion.header
       initial={{ y: -18, opacity: 0 }}
@@ -25,14 +44,14 @@ export function Navbar({ currentPlan, usageLabel }: NavbarProps) {
             {siteConfig.name.toUpperCase()}
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-[#4d463f] md:flex">
-            {primaryNavLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="nav-pill">
+            {navLinks.map((link) => (
+              <button key={link.href} type="button" onClick={() => runAuthenticated({ redirectTo: link.href })} className="nav-pill">
                 {link.label}
-              </Link>
+              </button>
             ))}
-            <Link href="/dashboard" className="nav-pill">
+            <button type="button" onClick={() => runAuthenticated({ redirectTo: "/dashboard" })} className="nav-pill">
               Dashboard
-            </Link>
+            </button>
           </nav>
         </div>
 
@@ -46,14 +65,56 @@ export function Navbar({ currentPlan, usageLabel }: NavbarProps) {
               {currentPlan}
             </div>
           ) : null}
-          <Link href="/dashboard" className="interactive-pop hidden rounded-full border border-black/6 bg-white px-4 py-2 text-sm font-medium text-[#181614] hover:border-[#20584f]/30 hover:text-[#181614] sm:inline-flex">
-            <span className="relative z-[1]">Start Free</span>
-          </Link>
+          {!user && showStartFree ? (
+            <button
+              type="button"
+              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              className="interactive-pop hidden rounded-full border border-black/6 bg-white px-4 py-2 text-sm font-medium text-[#181614] hover:border-[#20584f]/30 hover:text-[#181614] sm:inline-flex"
+            >
+              <span className="relative z-[1]">Start Free</span>
+            </button>
+          ) : null}
           <UpgradeButton
             compact
             label="Upgrade"
             className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
           />
+          {user ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((current) => !current)}
+                className="interactive-pop inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-sm font-semibold text-[#181614]"
+              >
+                <span className="relative z-[1]">{initials}</span>
+              </button>
+
+              {isMenuOpen ? (
+                <div className="absolute right-0 top-14 w-44 rounded-[1.2rem] border border-black/8 bg-white p-2 shadow-[0_20px_40px_rgba(24,22,20,0.08)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      router.push("/profile");
+                    }}
+                    className="w-full rounded-[0.9rem] px-3 py-2 text-left text-sm font-medium text-[#181614] transition hover:bg-[#f3efe8]"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      logout();
+                    }}
+                    className="mt-1 w-full rounded-[0.9rem] px-3 py-2 text-left text-sm font-medium text-[#8d4d44] transition hover:bg-[#f9ece8]"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </motion.header>

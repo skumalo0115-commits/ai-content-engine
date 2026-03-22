@@ -76,7 +76,7 @@ export function InputForm({
         {isLoading ? "Generating..." : "Generate Content"}
       </motion.button>
       <p className="text-xs leading-5 text-[#7a7269]">
-        {helperMessage || "Live provider uses OpenRouter when configured. Otherwise, the app serves polished demo content for localhost testing."}
+        {helperMessage || "Live OpenRouter generation is required for captions, short-form ideas, hashtag stacks, and weekly posting plans."}
       </p>
     </motion.form>
   );

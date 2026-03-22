@@ -88,14 +88,9 @@ export const faqItems = [
       "Pro unlocks unlimited generation, premium positioning inside the dashboard, and first access to launch-beta features like saved content and exports.",
   },
   {
-    question: "Does the AI work on localhost?",
-    answer:
-      "Yes. When your OpenRouter key is configured, the generator uses the live provider. If not, the app falls back to polished demo output so you can keep building and testing.",
-  },
-  {
     question: "Can I use this for any kind of small business?",
     answer:
-      "Yes. The prompts and demo outputs are designed for service businesses, local brands, online stores, personal brands, agencies, and creators.",
+      "Yes. The prompts and live outputs are designed for service businesses, local brands, online stores, personal brands, agencies, and creators.",
   },
 ] as const;
 

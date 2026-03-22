@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useAuth } from "@/app/components/AuthProvider";
 import { FloatingCard } from "@/app/components/FloatingCard";
 import { MarketingShell } from "@/app/components/MarketingShell";
 import { PlanCard } from "@/app/components/PlanCard";
@@ -47,25 +47,36 @@ const principleCards = [
 ];
 
 export default function HomePage() {
+  const { runAuthenticated } = useAuth();
+
   return (
     <MarketingShell>
-      <div className="pointer-events-none fixed inset-0 -z-[9] bg-[url('/social-wall.svg')] bg-cover bg-center opacity-[0.11] mix-blend-multiply [mask-image:linear-gradient(180deg,black_0%,black_70%,transparent_100%)]" />
+      <div
+        className="pointer-events-none fixed inset-0 -z-[9] scale-110 bg-cover bg-center blur-[20px]"
+        style={{
+          backgroundImage:
+            "url('https://i0.wp.com/read.crowdfireapp.com/wp-content/uploads/2022/03/Content-Diversification_-8-Social-Media-Content-Types-and-How-to-Use-Them.png?fit=675%2C450&ssl=1')",
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(10,17,32,0.58)]" />
       <section className="relative grid min-h-[76vh] gap-14 overflow-hidden rounded-[2.4rem] pt-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-        <div className="pointer-events-none absolute inset-0 bg-[url('/social-wall.svg')] bg-cover bg-center opacity-[0.2] grayscale-[0.05] brightness-115 saturate-[0.78]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(244,240,232,0.58),rgba(244,240,232,0.86))]" />
         <Reveal className="space-y-7">
           <div className="relative space-y-4">
-            <p className="editorial-label text-xs">Editorial AI Content Studio</p>
-            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-[#181614] sm:text-7xl">{siteConfig.heroTitle}</h1>
-            <p className="max-w-2xl text-lg leading-8 text-[#5f584f] sm:text-xl">{siteConfig.heroSubtitle}</p>
-            <p className="max-w-2xl text-sm leading-7 text-[#7a7269] sm:text-base">{siteConfig.trustBadge}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/78">Editorial AI Content Studio</p>
+            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-7xl">{siteConfig.heroTitle}</h1>
+            <p className="max-w-2xl text-lg leading-8 text-white/86 sm:text-xl">{siteConfig.heroSubtitle}</p>
+            <p className="max-w-2xl text-sm leading-7 text-white/72 sm:text-base">{siteConfig.trustBadge}</p>
           </div>
 
           <div className="relative flex flex-col gap-4 sm:flex-row">
-            <Link href="/dashboard" className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]">
+            <button
+              type="button"
+              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+            >
               <span className="relative z-[1] text-white">Start Free</span>
               <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
-            </Link>
+            </button>
             <UpgradeButton
               label="Upgrade to Pro"
               className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
@@ -78,7 +89,7 @@ export default function HomePage() {
             {[
               { value: "5/day", label: "Free generations" },
               { value: "$29", label: "Pro monthly plan" },
-              { value: "Live + demo", label: "Works with or without API keys" },
+              { value: "Live only", label: "Runs through OpenRouter with real output" },
             ].map((stat) => (
               <div key={stat.label} className="interactive-pop rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
                 <p className="text-3xl font-semibold text-[#181614]">{stat.value}</p>
@@ -88,16 +99,16 @@ export default function HomePage() {
           </div>
         </Reveal>
 
-        <Reveal className="relative" delay={0.08}>
+        <Reveal className="relative lg:-translate-y-5" delay={0.08}>
           <SelfieHeroScene />
         </Reveal>
       </section>
 
       <Reveal className="space-y-8">
         <div className="max-w-3xl space-y-4">
-          <p className="editorial-label text-xs">What it gives you</p>
-          <h2 className="text-4xl font-semibold tracking-tight text-[#181614]">A cleaner way to turn one idea into content that looks ready to publish.</h2>
-          <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/78">What it gives you</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-white">A cleaner way to turn one idea into content that looks ready to publish.</h2>
+          <p className="max-w-2xl text-base leading-7 text-white/82">
             Tell it what you sell, who you want to reach, and what result you want. It gives you a usable caption angle, a short-form content idea, a cleaner hashtag set, and a simple next-post rhythm you can actually work from.
           </p>
         </div>
@@ -113,9 +124,9 @@ export default function HomePage() {
 
       <Reveal className="grid gap-10 lg:grid-cols-[1fr_0.95fr] lg:items-start">
         <div className="space-y-5">
-          <p className="editorial-label text-xs">Why this helps you</p>
-          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">Use the free plan to plan smarter content before you spend time filming, designing, or posting.</h2>
-          <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/78">Why this helps you</p>
+          <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">Use the free plan to plan smarter content before you spend time filming, designing, or posting.</h2>
+          <p className="max-w-2xl text-base leading-7 text-white/82">
             Instead of guessing what to post, you can walk away with a clearer caption angle, a short-form video hook, a useful hashtag set, and a simple posting direction that fits your goal.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -163,9 +174,9 @@ export default function HomePage() {
 
       <Reveal className="space-y-8">
         <div className="max-w-3xl space-y-4">
-          <p className="editorial-label text-xs">Pricing</p>
-          <h2 className="text-4xl font-semibold tracking-tight text-[#181614]">Free for daily testing. Pro when you want to remove the cap and move faster.</h2>
-          <p className="text-base leading-7 text-[#5f584f]">{siteConfig.pricingBlurb}</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/78">Pricing</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-white">Free for daily testing. Pro when you want to remove the cap and move faster.</h2>
+          <p className="text-base leading-7 text-white/82">{siteConfig.pricingBlurb}</p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -187,9 +198,13 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
-            <Link href="/dashboard" className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]">
+            <button
+              type="button"
+              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+            >
               <span className="relative z-[1]">Try the New Free Plan</span>
-            </Link>
+            </button>
             <UpgradeButton label="Go Pro for $29/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
           </div>
         </div>

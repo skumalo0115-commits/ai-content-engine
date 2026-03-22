@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import type { PlanConfig } from "@/app/lib/types";
+import { useAuth } from "./AuthProvider";
 import { CheckIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
 
@@ -12,6 +12,8 @@ type PlanCardProps = {
 };
 
 export function PlanCard({ plan, featured = false }: PlanCardProps) {
+  const { runAuthenticated } = useAuth();
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 24 }}
@@ -41,9 +43,13 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         </div>
 
         {plan.key === "free" ? (
-          <Link href="/dashboard" className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]">
-            {plan.ctaLabel}
-          </Link>
+          <button
+            type="button"
+            onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+            className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+          >
+            <span className="relative z-[1]">{plan.ctaLabel}</span>
+          </button>
         ) : (
           <UpgradeButton label={plan.ctaLabel} className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
         )}

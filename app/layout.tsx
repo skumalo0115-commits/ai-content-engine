@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/app/components/AuthProvider";
 import { PointerGlow } from "@/app/components/PointerGlow";
 import { getBaseUrl, siteConfig } from "@/app/lib/site";
 
@@ -37,8 +38,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className="min-h-screen bg-background font-sans text-[#181614] antialiased">
-        <PointerGlow />
-        {children}
+        <AuthProvider>
+          <PointerGlow />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

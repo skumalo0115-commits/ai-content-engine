@@ -13,7 +13,7 @@ export type GeneratedItem = {
 };
 
 export type GenerateContentResponse = {
-  source: "openrouter" | "demo";
+  source: "openrouter";
   items: GeneratedItem[];
   remainingFreeGenerations?: number | null;
   meta?: {
