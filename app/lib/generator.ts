@@ -96,7 +96,7 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    throw new Error("OpenRouter is required. Add OPENROUTER_API_KEY to enable live content generation.");
+    throw new Error("OpenRouter is required. Add OPENROUTER_API_KEY to .env.local and restart localhost to enable live content generation.");
   }
 
   const validated = validateGeneratePayload(payload);

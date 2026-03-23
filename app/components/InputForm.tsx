@@ -76,7 +76,7 @@ export function InputForm({
         {isLoading ? "Generating..." : "Generate Content"}
       </motion.button>
       <p className="text-xs leading-5 text-[#7a7269]">
-        {helperMessage || "Live OpenRouter generation is required for captions, short-form ideas, hashtag stacks, and weekly posting plans."}
+        {helperMessage || "Your localhost form already captures these three fields. Add OPENROUTER_API_KEY in .env.local to send them live to OpenRouter."}
       </p>
     </motion.form>
   );

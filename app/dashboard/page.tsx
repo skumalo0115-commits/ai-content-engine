@@ -63,11 +63,12 @@ function DashboardPageInner() {
   const searchParams = useSearchParams();
   const { user, isAuthReady, openAuthModal } = useAuth();
   const [cards, setCards] = useState<GeneratedItem[]>(starterCards);
+  const [lastBrief, setLastBrief] = useState<{ businessType: string; targetAudience: string; goal: string } | null>(null);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>("Connect your OpenRouter key to generate live captions, TikTok concepts, hashtag stacks, and content plans.");
+  const [notice, setNotice] = useState<string | null>("OpenRouter works on localhost. Add OPENROUTER_API_KEY in .env.local, restart the app, and your entered brief will be sent live.");
   const [sourceLabel, setSourceLabel] = useState<string>("Platform playbook");
 
   const syncClientState = useEffectEvent(() => {
@@ -118,6 +119,8 @@ function DashboardPageInner() {
   const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
 
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
+    setLastBrief(payload);
+
     if (isLocked) {
       setError("You have reached today's free limit on this browser. Upgrade to Pro for unlimited generations.");
       return;
@@ -202,6 +205,26 @@ function DashboardPageInner() {
           {error ? (
             <div className="rounded-2xl border border-black/6 bg-[#f8ebe6] p-4 text-sm text-[#7c5645]">
               <span className="font-semibold">Error:</span> {error}
+            </div>
+          ) : null}
+
+          {lastBrief ? (
+            <div className="rounded-2xl border border-black/6 bg-white/85 p-5">
+              <p className="editorial-label text-xs">Latest brief captured on localhost</p>
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
+                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.businessType}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
+                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.targetAudience}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
+                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.goal}</p>
+                </div>
+              </div>
             </div>
           ) : null}
 
