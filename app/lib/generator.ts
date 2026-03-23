@@ -1,10 +1,39 @@
 import { DEFAULT_OPENROUTER_MODEL, getBaseUrl, siteConfig } from "./site";
-import type { GeneratePayload, GenerateContentResponse, GeneratedItem } from "./types";
+import type { GeneratePayload, GenerateContentResponse, GeneratedStrategy, StrategyDayPlan, VideoRecommendation } from "./types";
 
 const openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
-function cleanText(value: string) {
-  return value.trim().replace(/\s+/g, " ");
+function cleanText(value: unknown): string {
+  if (typeof value === "string") {
+    return value.trim().replace(/\s+/g, " ");
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim().replace(/\s+/g, " ");
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((part) => cleanText(part))
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  if (value && typeof value === "object") {
+    if ("text" in value) {
+      return cleanText(value.text);
+    }
+
+    if ("content" in value) {
+      return cleanText(value.content);
+    }
+
+    return JSON.stringify(value).trim().replace(/\s+/g, " ");
+  }
+
+  return "";
 }
 
 export function validateGeneratePayload(payload: GeneratePayload) {
@@ -47,6 +76,51 @@ function extractContentText(content: unknown) {
   return "";
 }
 
+function toStringArray(value: unknown) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanText(item)).filter(Boolean);
+  }
+
+  const cleaned = cleanText(value);
+  return cleaned ? [cleaned] : [];
+}
+
+function toFiveDayPlan(value: unknown): StrategyDayPlan[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item, index) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+
+      const day = cleanText("day" in item ? item.day : `Day ${index + 1}`);
+      const platform = cleanText("platform" in item ? item.platform : "");
+      const action = cleanText("action" in item ? item.action : "");
+
+      if (!day || !platform || !action) {
+        return null;
+      }
+
+      return { day, platform, action };
+    })
+    .filter((item): item is StrategyDayPlan => Boolean(item))
+    .slice(0, 5);
+}
+
+function toVideoRecommendations(value: unknown): VideoRecommendation[] {
+  return toStringArray(value).slice(0, 4).map((topic) => ({
+    title: topic,
+    url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic)}`,
+  }));
+}
+
 function parseAiJson(raw: string) {
   const fenced = raw.match(/```json\s*([\s\S]*?)```/i);
   const jsonText = fenced?.[1] || raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
@@ -56,40 +130,32 @@ function parseAiJson(raw: string) {
   }
 
   const parsed = JSON.parse(jsonText) as {
-    caption?: string;
-    idea?: string;
-    hashtags?: string;
-    calendar?: string;
+    title?: unknown;
+    overview?: unknown;
+    instagram_plan?: unknown;
+    tiktok_plan?: unknown;
+    facebook_linkedin_plan?: unknown;
+    hashtag_plan?: unknown;
+    five_day_plan?: unknown;
+    video_topics?: unknown;
   };
 
-  const items: GeneratedItem[] = [
-    {
-      type: "caption",
-      title: "Instagram Caption",
-      content: cleanText(parsed.caption || ""),
-    },
-    {
-      type: "idea",
-      title: "TikTok / Reel Idea",
-      content: cleanText(parsed.idea || ""),
-    },
-    {
-      type: "hashtags",
-      title: "Hashtag Stack",
-      content: cleanText(parsed.hashtags || ""),
-    },
-    {
-      type: "calendar",
-      title: "Mini Content Plan",
-      content: cleanText(parsed.calendar || ""),
-    },
-  ];
+  const strategy: GeneratedStrategy = {
+    title: cleanText(parsed.title || "Your next five-day social content move"),
+    overview: cleanText(parsed.overview || ""),
+    instagramPlan: cleanText(parsed.instagram_plan || ""),
+    tiktokPlan: cleanText(parsed.tiktok_plan || ""),
+    facebookLinkedInPlan: cleanText(parsed.facebook_linkedin_plan || ""),
+    hashtagPlan: cleanText(parsed.hashtag_plan || ""),
+    fiveDayPlan: toFiveDayPlan(parsed.five_day_plan),
+    videoRecommendations: toVideoRecommendations(parsed.video_topics),
+  };
 
-  if (items.some((item) => !item.content)) {
+  if (!strategy.overview || !strategy.instagramPlan || !strategy.tiktokPlan || !strategy.facebookLinkedInPlan || !strategy.hashtagPlan || strategy.fiveDayPlan.length < 5) {
     throw new Error("The AI response was incomplete.");
   }
 
-  return items;
+  return strategy;
 }
 
 async function generateOpenRouterItems(payload: GeneratePayload) {
@@ -117,11 +183,11 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
         {
           role: "system",
           content:
-            "You are a senior social media strategist for small businesses. Return strict JSON only with keys caption, idea, hashtags, and calendar. Keep each value concise, actionable, and polished.",
+            "You are a senior social media strategist for small businesses. Return strict JSON only. Be very specific. Tell the user exactly what to post, film, write, or publish on each platform. Use these keys exactly: title, overview, instagram_plan, tiktok_plan, facebook_linkedin_plan, hashtag_plan, five_day_plan, video_topics. five_day_plan must be an array of exactly 5 objects with keys day, platform, action. video_topics must be an array of 3 or 4 YouTube search topics that directly teach the user how to execute this plan. Keep every section practical and business-specific.",
         },
         {
           role: "user",
-          content: `Business type: ${validated.businessType}\nTarget audience: ${validated.targetAudience}\nGoal: ${validated.goal}\n\nGenerate:\n- 1 premium Instagram caption\n- 1 TikTok or Reel idea\n- 1 hashtag stack with 6 to 8 hashtags\n- 1 five-day mini content plan\n\nReturn valid JSON only.`,
+          content: `Business type: ${validated.businessType}\nTarget audience: ${validated.targetAudience}\nGoal: ${validated.goal}\n\nBuild one specific five-day content strategy. The output must:\n- explain exactly what the user should do on Instagram\n- explain exactly what the user should do on TikTok\n- explain what the user should do on Facebook or LinkedIn depending on what fits this business best\n- include a practical hashtag plan\n- include a five-day action plan with one clear task per day\n- include 3 to 4 exact YouTube search topics the user can click to learn more\n\nReturn valid JSON only.`,
         },
       ],
     }),
@@ -147,7 +213,7 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
 
   return {
     source: "openrouter" as const,
-    items: parseAiJson(rawContent),
+    strategy: parseAiJson(rawContent),
     meta: {
       model,
     },

@@ -4,17 +4,38 @@ export type GeneratePayload = {
   goal: string;
 };
 
-export type GeneratedItemType = "caption" | "idea" | "hashtags" | "calendar";
+export type SavedStrategy = {
+  id: string;
+  createdAt: string;
+  brief: GeneratePayload;
+  strategy: GeneratedStrategy;
+};
 
-export type GeneratedItem = {
-  type: GeneratedItemType;
+export type StrategyDayPlan = {
+  day: string;
+  platform: string;
+  action: string;
+};
+
+export type VideoRecommendation = {
   title: string;
-  content: string;
+  url: string;
+};
+
+export type GeneratedStrategy = {
+  title: string;
+  overview: string;
+  instagramPlan: string;
+  tiktokPlan: string;
+  facebookLinkedInPlan: string;
+  hashtagPlan: string;
+  fiveDayPlan: StrategyDayPlan[];
+  videoRecommendations: VideoRecommendation[];
 };
 
 export type GenerateContentResponse = {
   source: "openrouter";
-  items: GeneratedItem[];
+  strategy: GeneratedStrategy;
   remainingFreeGenerations?: number | null;
   meta?: {
     model?: string;

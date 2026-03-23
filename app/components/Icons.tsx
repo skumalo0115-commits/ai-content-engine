@@ -63,6 +63,14 @@ export function CrownIcon(props: IconProps) {
   );
 }
 
+export function BookmarkIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M6 4h12a2 2 0 0 1 2 2v14l-8-4-8 4V6a2 2 0 0 1 2-2Z" />
+    </BaseIcon>
+  );
+}
+
 export function GaugeIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

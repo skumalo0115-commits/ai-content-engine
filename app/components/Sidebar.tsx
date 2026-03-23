@@ -3,18 +3,23 @@
 import { motion } from "framer-motion";
 import { BoltIcon, CrownIcon, GaugeIcon, LockIcon } from "./Icons";
 
+type DashboardView = "generate" | "saved";
+
 type SidebarProps = {
   currentPlan: string;
   remainingFreeGenerations: number;
+  activeView: DashboardView;
+  savedCount: number;
+  onChangeView: (view: DashboardView) => void;
 };
 
 const sections = [
-  { title: "Generate Content", status: "Live", icon: BoltIcon },
-  { title: "Saved Content", status: "Beta", icon: CrownIcon },
-  { title: "Analytics", status: "Soon", icon: GaugeIcon },
+  { title: "Generate Content", status: "Live", icon: BoltIcon, view: "generate" as const },
+  { title: "Saved Content", status: "Saved", icon: CrownIcon, view: "saved" as const },
+  { title: "Analytics", status: "Soon", icon: GaugeIcon, view: null },
 ];
 
-export function Sidebar({ currentPlan, remainingFreeGenerations }: SidebarProps) {
+export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, savedCount, onChangeView }: SidebarProps) {
   return (
     <motion.aside initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="glass-panel w-full rounded-[28px] p-5 md:w-72">
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
@@ -29,21 +34,39 @@ export function Sidebar({ currentPlan, remainingFreeGenerations }: SidebarProps)
       <nav className="space-y-2">
         {sections.map((section) => {
           const Icon = section.icon;
+          const isActive = section.view === activeView;
+          const isDisabled = !section.view;
 
           return (
             <motion.button
               key={section.title}
-              whileHover={{ x: 3 }}
-              whileTap={{ scale: 0.99 }}
-              className="flex w-full items-center justify-between rounded-[1.2rem] border border-transparent px-3 py-3 text-left text-sm text-[#3d3935] transition hover:border-black/6 hover:bg-[#f8f4ee]"
+              type="button"
+              whileHover={isDisabled ? undefined : { x: 3 }}
+              whileTap={isDisabled ? undefined : { scale: 0.99 }}
+              onClick={() => {
+                if (section.view) {
+                  onChangeView(section.view);
+                }
+              }}
+              disabled={isDisabled}
+              className={`flex w-full items-center justify-between rounded-[1.2rem] border px-3 py-3 text-left text-sm transition ${
+                isActive
+                  ? "border-black/8 bg-[#f8f4ee] text-[#181614]"
+                  : isDisabled
+                    ? "cursor-not-allowed border-transparent text-[#8a8278] opacity-70"
+                    : "border-transparent text-[#3d3935] hover:border-black/6 hover:bg-[#f8f4ee]"
+              }`}
             >
               <span className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#e6efeb] text-[#20584f]">
+                <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${isActive ? "bg-[#181614] text-white" : "bg-[#e6efeb] text-[#20584f]"}`}>
                   <Icon className="h-4 w-4" />
                 </span>
-                {section.title}
+                <span>
+                  {section.title}
+                  {section.view === "saved" && savedCount > 0 ? <span className="ml-2 text-xs text-[#7a7269]">{savedCount}</span> : null}
+                </span>
               </span>
-              <span className="text-xs uppercase tracking-[0.22em] text-[#20584f]">{section.status}</span>
+              <span className={`text-xs uppercase tracking-[0.22em] ${isDisabled ? "text-[#8a8278]" : "text-[#20584f]"}`}>{section.status}</span>
             </motion.button>
           );
         })}

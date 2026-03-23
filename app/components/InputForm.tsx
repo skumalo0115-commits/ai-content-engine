@@ -10,7 +10,6 @@ type InputFormProps = {
   isDisabled?: boolean;
   currentPlan: PlanKey;
   remainingFreeGenerations: number;
-  helperMessage?: string | null;
 };
 
 const initialState: GeneratePayload = {
@@ -25,7 +24,6 @@ export function InputForm({
   isDisabled = false,
   currentPlan,
   remainingFreeGenerations,
-  helperMessage,
 }: InputFormProps) {
   const [formData, setFormData] = useState<GeneratePayload>(initialState);
 
@@ -75,9 +73,6 @@ export function InputForm({
       >
         {isLoading ? "Generating..." : "Generate Content"}
       </motion.button>
-      <p className="text-xs leading-5 text-[#7a7269]">
-        {helperMessage || "Your localhost form already captures these three fields. Add OPENROUTER_API_KEY in .env.local to send them live to OpenRouter."}
-      </p>
     </motion.form>
   );
 }

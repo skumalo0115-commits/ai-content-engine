@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/components/AuthProvider";
 import { FloatingCard } from "@/app/components/FloatingCard";
 import { MarketingShell } from "@/app/components/MarketingShell";
@@ -47,7 +48,17 @@ const principleCards = [
 ];
 
 export default function HomePage() {
-  const { runAuthenticated } = useAuth();
+  const router = useRouter();
+  const { user, runAuthenticated } = useAuth();
+
+  const openDashboard = () => {
+    if (user) {
+      router.push("/dashboard");
+      return;
+    }
+
+    runAuthenticated({ redirectTo: "/dashboard" });
+  };
 
   return (
     <MarketingShell>
@@ -71,10 +82,10 @@ export default function HomePage() {
           <div className="relative flex flex-col gap-4 sm:flex-row">
             <button
               type="button"
-              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              onClick={openDashboard}
               className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
             >
-              <span className="relative z-[1] text-white">Start Free</span>
+              <span className="relative z-[1] text-white">{user ? "Dashboard" : "Start Free"}</span>
               <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
             </button>
             <UpgradeButton
@@ -200,10 +211,10 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
             <button
               type="button"
-              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              onClick={openDashboard}
               className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
             >
-              <span className="relative z-[1]">Try the New Free Plan</span>
+              <span className="relative z-[1]">{user ? "Open Dashboard" : "Try the New Free Plan"}</span>
             </button>
             <UpgradeButton label="Go Pro for $29/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
           </div>

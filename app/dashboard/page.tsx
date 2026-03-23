@@ -2,79 +2,84 @@
 
 import { motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
-import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/components/AuthProvider";
-import { FloatingCard } from "@/app/components/FloatingCard";
+import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
 import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
+import { getSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan } from "@/app/lib/usage";
-import type { GenerateContentResponse, GeneratedItem, GeneratedItemType, PlanKey } from "@/app/lib/types";
-import { BoltIcon, CalendarIcon, CrownIcon, HashIcon, SparkIcon } from "../components/Icons";
+import type { GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
+import { CrownIcon } from "../components/Icons";
 
-const starterCards: GeneratedItem[] = [
-  {
-    type: "caption",
-    title: "Instagram Caption Strategy",
-    content: "Create captions that open with a sharp hook, explain the offer clearly, and push viewers toward comments, saves, or profile clicks.",
-  },
-  {
-    type: "idea",
-    title: "TikTok and Reel Concepts",
-    content: "Turn one business goal into short-form video angles, opening hooks, scene ideas, and creator-style talking points you can film fast.",
-  },
-  {
-    type: "hashtags",
-    title: "Platform-Specific Hashtags",
-    content: "Generate cleaner hashtag sets that support discoverability on Instagram while still matching the offer, audience, and posting goal.",
-  },
-  {
-    type: "calendar",
-    title: "Weekly Posting Direction",
-    content: "Map one campaign into a practical posting rhythm for TikTok, Instagram feed posts, story prompts, and CTA-based follow-up content.",
-  },
-];
+const starterStrategy: GeneratedStrategy = {
+  title: "Your content strategy will land here",
+  overview:
+    "Enter your business type, target audience, and content goal to generate one focused action card with exact platform moves, a five-day plan, and learning links.",
+  instagramPlan:
+    "You will get a clear Instagram direction that tells you what to post, what angle to use in the caption, and what action to ask the audience to take next.",
+  tiktokPlan:
+    "You will get a TikTok plan with a specific video concept, the best opening angle, and what to say or show in the video to match your goal.",
+  facebookLinkedInPlan:
+    "You will also get a supporting platform plan so you know what to repurpose, what to announce, and how to keep the message consistent outside short-form video.",
+  hashtagPlan:
+    "The hashtag section will tell you how to use your tags more intentionally instead of dropping random broad hashtags under every post.",
+  fiveDayPlan: [
+    { day: "Day 1", platform: "Instagram", action: "Publish your core post or reel with the main campaign angle." },
+    { day: "Day 2", platform: "TikTok", action: "Turn the same idea into a short video with a sharper hook and clearer payoff." },
+    { day: "Day 3", platform: "Stories", action: "Run a story follow-up that answers one common customer question." },
+    { day: "Day 4", platform: "Facebook / LinkedIn", action: "Repurpose the campaign into a trust-building text post or update." },
+    { day: "Day 5", platform: "Community", action: "Review performance and create a follow-up post based on what got the best response." },
+  ],
+  videoRecommendations: [
+    { title: "Instagram content strategy for small business", url: "https://www.youtube.com/results?search_query=Instagram+content+strategy+for+small+business" },
+    { title: "TikTok hooks for business videos", url: "https://www.youtube.com/results?search_query=TikTok+hooks+for+business+videos" },
+    { title: "5 day social media content plan", url: "https://www.youtube.com/results?search_query=5+day+social+media+content+plan" },
+  ],
+};
 
-const lockedPreviewCards: GeneratedItem[] = [
-  {
-    type: "caption",
-    title: "Premium Caption Pack",
-    content: "Upgrade to reveal extra premium caption options and higher-volume content output.",
-  },
-  {
-    type: "calendar",
-    title: "Extended Campaign Plan",
-    content: "Unlock a deeper weekly content calendar and keep your posting cadence moving without the daily cap.",
-  },
-];
-
-const iconMap: Record<GeneratedItemType, ReactNode> = {
-  caption: <SparkIcon className="h-4 w-4" />,
-  idea: <BoltIcon className="h-4 w-4" />,
-  hashtags: <HashIcon className="h-4 w-4" />,
-  calendar: <CalendarIcon className="h-4 w-4" />,
+const lockedPreviewStrategy: GeneratedStrategy = {
+  title: "Your premium strategy is ready to unlock",
+  overview: "Upgrade to reveal a full black-card strategy with platform-specific instructions, a day-by-day content plan, and video learning links.",
+  instagramPlan: "Unlock a more detailed Instagram plan with exact post direction, caption angle, and call to action.",
+  tiktokPlan: "Unlock a sharper TikTok content angle with a clearer video structure, hook, and filming direction.",
+  facebookLinkedInPlan: "Unlock a supporting platform plan that helps you repurpose the campaign across more channels.",
+  hashtagPlan: "Unlock a tighter hashtag strategy that matches the campaign instead of using generic reach tags.",
+  fiveDayPlan: starterStrategy.fiveDayPlan,
+  videoRecommendations: starterStrategy.videoRecommendations,
 };
 
 function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthReady, openAuthModal } = useAuth();
-  const [cards, setCards] = useState<GeneratedItem[]>(starterCards);
-  const [lastBrief, setLastBrief] = useState<{ businessType: string; targetAudience: string; goal: string } | null>(null);
+  const [strategy, setStrategy] = useState<GeneratedStrategy>(starterStrategy);
+  const [lastBrief, setLastBrief] = useState<GeneratePayload | null>(null);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>("OpenRouter works on localhost. Add OPENROUTER_API_KEY in .env.local, restart the app, and your entered brief will be sent live.");
   const [sourceLabel, setSourceLabel] = useState<string>("Platform playbook");
+  const [activeView, setActiveView] = useState<"generate" | "saved">("generate");
+  const [savedStrategies, setSavedStrategies] = useState<SavedStrategy[]>([]);
+  const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
     setPlan(nextPlan);
     setRemainingFreeGenerations(nextPlan === "pro" ? FREE_DAILY_GENERATIONS : getRemainingFreeGenerations());
+    const nextSaved = getSavedStrategies();
+    setSavedStrategies(nextSaved);
+    setExpandedSavedId((currentId) => {
+      if (currentId && nextSaved.some((item) => item.id === currentId)) {
+        return currentId;
+      }
+
+      return nextSaved[0]?.id ?? null;
+    });
   });
 
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
@@ -85,7 +90,6 @@ function DashboardPageInner() {
       if (response.ok && data.active) {
         setStoredPlan("pro");
         syncClientState();
-        setNotice("Pro unlocked on this browser. Unlimited generations are now active.");
       }
     } finally {
       router.replace("/dashboard?checkout=success");
@@ -112,14 +116,17 @@ function DashboardPageInner() {
     }
 
     if (checkoutState === "success" && !sessionId) {
-      setNotice("Checkout completed. If your Pro badge does not appear yet, refresh this page once.");
+      setError(null);
     }
   }, [searchParams]);
 
   const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
+  const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
+  const expandedSavedItem = savedStrategies.find((item) => item.id === expandedSavedId) ?? null;
 
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
+    setActiveView("generate");
 
     if (isLocked) {
       setError("You have reached today's free limit on this browser. Upgrade to Pro for unlimited generations.");
@@ -150,11 +157,9 @@ function DashboardPageInner() {
       }
 
       startTransition(() => {
-        setCards(data.items);
+        setStrategy(data.strategy);
         setSourceLabel(`Live AI: ${data.meta?.model || "OpenRouter"}`);
       });
-
-      setNotice("Live OpenRouter generation completed successfully.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate content right now.");
     } finally {
@@ -162,7 +167,17 @@ function DashboardPageInner() {
     }
   }
 
-  const displayCards = isLocked ? [...cards, ...lockedPreviewCards] : cards;
+  function handleSaveStrategy() {
+    if (!lastBrief || !canSaveCurrentStrategy) {
+      return;
+    }
+
+    const { nextEntry, nextEntries } = saveGeneratedStrategy({ brief: lastBrief, strategy });
+    setSavedStrategies(nextEntries);
+    setExpandedSavedId(nextEntry.id);
+    setActiveView("saved");
+  }
+
   const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left today`;
 
   return (
@@ -175,10 +190,16 @@ function DashboardPageInner() {
       <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} />
 
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
-        <Sidebar currentPlan={plan === "pro" ? "Pro" : "Free"} remainingFreeGenerations={remainingFreeGenerations} />
+        <Sidebar
+          currentPlan={plan === "pro" ? "Pro" : "Free"}
+          remainingFreeGenerations={remainingFreeGenerations}
+          activeView={activeView}
+          savedCount={savedStrategies.length}
+          onChangeView={setActiveView}
+        />
 
         <main className="space-y-5">
-          {isLocked ? (
+          {activeView === "generate" && isLocked ? (
             <div className="glass-panel rounded-[28px] p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-2">
@@ -196,19 +217,13 @@ function DashboardPageInner() {
             </div>
           ) : null}
 
-          {notice ? (
-            <div className="rounded-2xl border border-black/6 bg-white/85 p-4 text-sm text-[#4f4942]">
-              <span className="font-semibold">Status:</span> {notice}
-            </div>
-          ) : null}
-
-          {error ? (
+          {activeView === "generate" && error ? (
             <div className="rounded-2xl border border-black/6 bg-[#f8ebe6] p-4 text-sm text-[#7c5645]">
               <span className="font-semibold">Error:</span> {error}
             </div>
           ) : null}
 
-          {lastBrief ? (
+          {activeView === "generate" && lastBrief ? (
             <div className="rounded-2xl border border-black/6 bg-white/85 p-5">
               <p className="editorial-label text-xs">Latest brief captured on localhost</p>
               <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -228,51 +243,126 @@ function DashboardPageInner() {
             </div>
           ) : null}
 
-          <InputForm
-            onSubmit={handleGenerate}
-            isLoading={isLoading}
-            isDisabled={isLocked}
-            currentPlan={plan}
-            remainingFreeGenerations={remainingFreeGenerations}
-            helperMessage={sourceLabel ? `Latest output source: ${sourceLabel}.` : null}
-          />
+          {activeView === "generate" ? (
+            <>
+              <InputForm
+                onSubmit={handleGenerate}
+                isLoading={isLoading}
+                isDisabled={isLocked}
+                currentPlan={plan}
+                remainingFreeGenerations={remainingFreeGenerations}
+              />
 
-          {isLoading ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-black/6 bg-white/85 p-5">
-              <div className="flex items-center gap-3 text-sm text-[#20584f]">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.2, ease: "linear" }}
-                  className="h-4 w-4 rounded-full border-2 border-[#20584f] border-t-transparent"
-                />
-                Generating your content pack...
-              </div>
-            </motion.div>
-          ) : null}
-
-          <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {displayCards.map((card, index) => {
-              const isPreview = isLocked && index >= cards.length;
-
-              return (
-                <motion.div
-                  key={`${card.title}-${index}`}
-                  drag={!isPreview}
-                  dragConstraints={{ top: -10, bottom: 10, left: -10, right: 10 }}
-                  dragTransition={{ bounceStiffness: 300, bounceDamping: 18 }}
-                >
-                  <FloatingCard
-                    title={card.title}
-                    content={card.content}
-                    icon={iconMap[card.type]}
-                    delay={index * 0.08}
-                    eyebrow={isPreview ? "Pro preview" : sourceLabel}
-                    isLocked={isPreview}
-                  />
+              {isLoading ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-black/6 bg-white/85 p-5">
+                  <div className="flex items-center gap-3 text-sm text-[#20584f]">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.2, ease: "linear" }}
+                      className="h-4 w-4 rounded-full border-2 border-[#20584f] border-t-transparent"
+                    />
+                    Generating your content pack...
+                  </div>
                 </motion.div>
-              );
-            })}
-          </section>
+              ) : null}
+
+              <section>
+                <GeneratedStrategyCard
+                  strategy={isLocked ? lockedPreviewStrategy : strategy}
+                  eyebrow={isLocked ? "Pro preview" : sourceLabel}
+                  isLocked={isLocked}
+                  showSaveButton={canSaveCurrentStrategy}
+                  onSave={handleSaveStrategy}
+                  saveLabel="Save to Saved Content"
+                />
+              </section>
+            </>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-black/6 bg-white/85 p-5">
+                <p className="editorial-label text-xs">Saved Content</p>
+                <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-[#181614]">Your saved content briefs</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5f584f]">
+                      Open any saved brief to expand it into the full generated strategy card, including platform actions, a five-day plan, and video recommendations.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView("generate")}
+                    className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2b2723]"
+                  >
+                    Generate Content
+                  </button>
+                </div>
+              </div>
+
+              {savedStrategies.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {savedStrategies.map((item) => {
+                    const isExpanded = item.id === expandedSavedId;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setExpandedSavedId(item.id)}
+                        className={`rounded-2xl border p-5 text-left transition ${
+                          isExpanded ? "border-[#181614] bg-white shadow-[0_16px_50px_rgba(0,0,0,0.08)]" : "border-black/6 bg-white/85 hover:border-black/12 hover:bg-white"
+                        }`}
+                      >
+                        <p className="editorial-label text-xs">Saved brief</p>
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
+                            <p className="mt-2 text-sm text-[#181614]">{item.brief.businessType}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
+                            <p className="mt-2 text-sm text-[#181614]">{item.brief.targetAudience}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
+                            <p className="mt-2 text-sm text-[#181614]">{item.brief.goal}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-black/12 bg-white/75 p-10 text-center">
+                  <p className="text-lg font-semibold text-[#181614]">No saved content yet</p>
+                  <p className="mt-2 text-sm text-[#5f584f]">Generate a strategy, hit save on the black output card, and it will appear here.</p>
+                </div>
+              )}
+
+              {expandedSavedItem ? (
+                <section>
+                  <div className="mb-4 rounded-2xl border border-black/6 bg-white/85 p-5">
+                    <p className="editorial-label text-xs">Selected saved brief</p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
+                        <p className="mt-2 text-sm text-[#181614]">{expandedSavedItem.brief.businessType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
+                        <p className="mt-2 text-sm text-[#181614]">{expandedSavedItem.brief.targetAudience}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
+                        <p className="mt-2 text-sm text-[#181614]">{expandedSavedItem.brief.goal}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <GeneratedStrategyCard strategy={expandedSavedItem.strategy} eyebrow="Saved strategy" />
+                </section>
+              ) : null}
+            </>
+          )}
 
           <div className="glass-panel rounded-[28px] p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -288,7 +378,7 @@ function DashboardPageInner() {
               ) : null}
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-[#5f584f]">
-              Authentication and synced accounts are intentionally out of scope for this pass, so the free limit and Pro unlock are handled locally to keep the launch experience fast and testable on localhost.
+              Sign-in is now live, but saved strategies, the free limit, and the Pro unlock are still stored on this browser in this launch version so the experience stays fast and easy to test on localhost.
             </p>
           </div>
         </main>

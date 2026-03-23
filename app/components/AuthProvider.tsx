@@ -182,6 +182,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [showPassword, setShowPassword] = useState(false);
   const pendingRequestRef = useRef<AuthRequest | null>(null);
 
+  const navigateTo = useCallback(
+    (path: string) => {
+      if (typeof window !== "undefined") {
+        window.location.assign(path);
+        return;
+      }
+
+      router.push(path);
+    },
+    [router],
+  );
+
   useEffect(() => {
     let isCancelled = false;
     let unsubscribe = () => {};
@@ -224,9 +236,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsSubmitting(false);
 
     if (closeRedirectTo) {
-      router.push(closeRedirectTo);
+      navigateTo(closeRedirectTo);
     }
-  }, [router]);
+  }, [navigateTo]);
 
   const continueAfterAuth = useCallback(
     (authenticatedFirebaseUser: FirebaseUser) => {
@@ -245,10 +257,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (pending?.redirectTo) {
-        router.push(pending.redirectTo);
+        navigateTo(pending.redirectTo);
       }
     },
-    [router],
+    [navigateTo],
   );
 
   const openAuthModal = useCallback((request?: AuthRequest) => {
@@ -271,14 +283,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (request?.redirectTo) {
-        router.push(request.redirectTo);
+        navigateTo(request.redirectTo);
       }
 
       return;
     }
 
     openAuthModal(request);
-  }, [openAuthModal, router, user]);
+  }, [navigateTo, openAuthModal, user]);
 
   const logout = useCallback(async () => {
     try {
