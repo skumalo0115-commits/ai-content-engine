@@ -3,9 +3,17 @@ import type { GeneratePayload, GenerateContentResponse, GeneratedStrategy, Strat
 
 const openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
+function normalizeMultilineText(value: string) {
+  return value
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function cleanText(value: unknown): string {
   if (typeof value === "string") {
-    return value.trim().replace(/\s+/g, " ");
+    return normalizeMultilineText(value).replace(/[^\S\n]+/g, " ");
   }
 
   if (typeof value === "number" || typeof value === "boolean") {
@@ -18,7 +26,7 @@ function cleanText(value: unknown): string {
       .filter(Boolean)
       .join(" ")
       .trim()
-      .replace(/\s+/g, " ");
+      .replace(/[^\S\n]+/g, " ");
   }
 
   if (value && typeof value === "object") {
@@ -30,7 +38,7 @@ function cleanText(value: unknown): string {
       return cleanText(value.content);
     }
 
-    return JSON.stringify(value).trim().replace(/\s+/g, " ");
+    return JSON.stringify(value).trim().replace(/[^\S\n]+/g, " ");
   }
 
   return "";
@@ -89,7 +97,77 @@ function toStringArray(value: unknown) {
   return cleaned ? [cleaned] : [];
 }
 
+function humanizeObjectKey(key: string) {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\bday\s*(\d+)\b/i, "Day $1")
+    .replace(/\bcta\b/gi, "CTA")
+    .replace(/\b[a-z]/g, (match) => match.toUpperCase());
+}
+
+function formatStructuredSection(value: unknown): string {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return formatStructuredSection(JSON.parse(trimmed));
+      } catch {
+        return cleanText(trimmed);
+      }
+    }
+
+    return cleanText(trimmed);
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item, index) => {
+        if (item && typeof item === "object") {
+          const objectValue = formatStructuredSection(item);
+          return objectValue ? objectValue : null;
+        }
+
+        const text = cleanText(item);
+        return text ? `${index + 1}. ${text}` : null;
+      })
+      .filter((item): item is string => Boolean(item))
+      .join("\n");
+  }
+
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, entryValue]) => {
+        const label = humanizeObjectKey(key);
+        const text = cleanText(entryValue);
+        return text ? `${label}: ${text}` : null;
+      })
+      .filter((item): item is string => Boolean(item))
+      .join("\n");
+  }
+
+  return cleanText(value);
+}
+
 function toFiveDayPlan(value: unknown): StrategyDayPlan[] {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value)
+      .map(([key, entryValue], index) => {
+        const action = cleanText(entryValue);
+        if (!action) {
+          return null;
+        }
+
+        return {
+          day: humanizeObjectKey(key) || `Day ${index + 1}`,
+          platform: "Action",
+          action,
+        };
+      })
+      .filter((item): item is StrategyDayPlan => Boolean(item))
+      .slice(0, 5);
+  }
+
   if (!Array.isArray(value)) {
     return [];
   }
@@ -143,10 +221,10 @@ function parseAiJson(raw: string) {
   const strategy: GeneratedStrategy = {
     title: cleanText(parsed.title || "Your next five-day social content move"),
     overview: cleanText(parsed.overview || ""),
-    instagramPlan: cleanText(parsed.instagram_plan || ""),
-    tiktokPlan: cleanText(parsed.tiktok_plan || ""),
-    facebookLinkedInPlan: cleanText(parsed.facebook_linkedin_plan || ""),
-    hashtagPlan: cleanText(parsed.hashtag_plan || ""),
+    instagramPlan: formatStructuredSection(parsed.instagram_plan || ""),
+    tiktokPlan: formatStructuredSection(parsed.tiktok_plan || ""),
+    facebookLinkedInPlan: formatStructuredSection(parsed.facebook_linkedin_plan || ""),
+    hashtagPlan: formatStructuredSection(parsed.hashtag_plan || ""),
     fiveDayPlan: toFiveDayPlan(parsed.five_day_plan),
     videoRecommendations: toVideoRecommendations(parsed.video_topics),
   };

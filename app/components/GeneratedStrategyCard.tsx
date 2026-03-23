@@ -35,7 +35,7 @@ function TypedText({ text, className }: { text: string; className?: string }) {
     return () => window.clearInterval(interval);
   }, [text]);
 
-  return <p className={className}>{visibleText}</p>;
+  return <p className={["whitespace-pre-line", className].filter(Boolean).join(" ")}>{visibleText}</p>;
 }
 
 export function GeneratedStrategyCard({

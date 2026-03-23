@@ -90,3 +90,9 @@ export function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy:
   setSavedContent(nextEntries);
   return { nextEntry, nextEntries };
 }
+
+export function deleteSavedStrategy(id: string) {
+  const nextEntries = getSavedStrategies().filter((entry) => entry.id !== id);
+  setSavedContent(nextEntries);
+  return nextEntries;
+}
