@@ -61,7 +61,7 @@ const iconMap: Record<GeneratedItemType, ReactNode> = {
 function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, openAuthModal } = useAuth();
+  const { user, isAuthReady, openAuthModal } = useAuth();
   const [cards, setCards] = useState<GeneratedItem[]>(starterCards);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
@@ -96,10 +96,10 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (isAuthReady && !user) {
       openAuthModal({ mode: "signup", redirectTo: "/dashboard", closeRedirectTo: "/" });
     }
-  }, [openAuthModal, user]);
+  }, [isAuthReady, openAuthModal, user]);
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");

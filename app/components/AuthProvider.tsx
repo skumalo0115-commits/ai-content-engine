@@ -1,19 +1,26 @@
 "use client";
 
-import { createContext, type FormEvent, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, type FormEvent, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile as updateFirebaseProfile,
+  type User as FirebaseUser,
+} from "firebase/auth";
+import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
+  uid: string;
   firstName: string;
   lastName: string;
   email: string;
   company: string;
   role: string;
-};
-
-type StoredAccount = AuthUser & {
-  password: string;
 };
 
 type AuthMode = "signin" | "signup";
@@ -28,24 +35,101 @@ type AuthRequest = {
 type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   openAuthModal: (request?: AuthRequest) => void;
   runAuthenticated: (request?: AuthRequest) => void;
-  logout: () => void;
-  updateProfile: (updates: Partial<AuthUser>) => void;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
 };
 
-const ACCOUNT_STORAGE_KEY = "ace-auth-account";
-const SESSION_STORAGE_KEY = "ace-auth-session";
+type StoredProfileOverride = {
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  role?: string;
+};
+
+type StoredProfileMap = Record<string, StoredProfileOverride>;
+
+const PROFILE_STORAGE_KEY = "ace-auth-profile-overrides";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toUser(account: StoredAccount): AuthUser {
+function buildFullName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.trim();
+}
+
+function splitName(displayName: string | null, email: string | null) {
+  const trimmedName = displayName?.trim();
+
+  if (trimmedName) {
+    const [firstName = "", ...rest] = trimmedName.split(/\s+/);
+    return {
+      firstName,
+      lastName: rest.join(" "),
+    };
+  }
+
+  const emailPrefix = email?.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+  const [firstName = "Jonny", ...rest] = (emailPrefix || "Jonny Bonny").split(/\s+/);
+
   return {
-    firstName: account.firstName,
-    lastName: account.lastName,
-    email: account.email,
-    company: account.company,
-    role: account.role,
+    firstName,
+    lastName: rest.join(" ") || "Bonny",
+  };
+}
+
+function readStoredProfiles(): StoredProfileMap {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as StoredProfileMap) : {};
+  } catch {
+    window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+    return {};
+  }
+}
+
+function saveStoredProfiles(nextProfiles: StoredProfileMap) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(nextProfiles));
+}
+
+function readStoredProfile(uid: string) {
+  return readStoredProfiles()[uid] || {};
+}
+
+function saveStoredProfile(uid: string, updates: StoredProfileOverride) {
+  const allProfiles = readStoredProfiles();
+  const nextProfiles = {
+    ...allProfiles,
+    [uid]: {
+      ...allProfiles[uid],
+      ...updates,
+    },
+  };
+
+  saveStoredProfiles(nextProfiles);
+  return nextProfiles[uid];
+}
+
+function toAuthUser(firebaseUser: FirebaseUser, profileOverride?: StoredProfileOverride): AuthUser {
+  const storedProfile = profileOverride || readStoredProfile(firebaseUser.uid);
+  const baseName = splitName(firebaseUser.displayName, firebaseUser.email);
+
+  return {
+    uid: firebaseUser.uid,
+    firstName: storedProfile.firstName || baseName.firstName,
+    lastName: storedProfile.lastName || baseName.lastName,
+    email: firebaseUser.email || "",
+    company: storedProfile.company || "",
+    role: storedProfile.role || "",
   };
 }
 
@@ -60,41 +144,75 @@ function getInitialForm(mode: AuthMode, user?: AuthUser | null) {
   };
 }
 
+function getAuthErrorMessage(error: unknown) {
+  if (typeof error !== "object" || !error || !("code" in error) || typeof error.code !== "string") {
+    return "Authentication could not be completed right now.";
+  }
+
+  switch (error.code) {
+    case "auth/email-already-in-use":
+      return "That email already has an account. Try logging in instead.";
+    case "auth/invalid-email":
+      return "That email address is not valid.";
+    case "auth/weak-password":
+      return "Use a stronger password with at least 6 characters.";
+    case "auth/invalid-credential":
+      return "Your email or password is incorrect.";
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google popup. Allow popups and try again.";
+    case "auth/popup-closed-by-user":
+      return "Google sign-in was cancelled before it finished.";
+    case "auth/too-many-requests":
+      return "Too many sign-in attempts were made. Please wait a moment and try again.";
+    default:
+      return "Authentication could not be completed right now.";
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    try {
-      const storedSessionRaw = window.localStorage.getItem(SESSION_STORAGE_KEY);
-      return storedSessionRaw ? (JSON.parse(storedSessionRaw) as AuthUser) : null;
-    } catch {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-      return null;
-    }
-  });
-  const [account, setAccount] = useState<StoredAccount | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    try {
-      const storedAccountRaw = window.localStorage.getItem(ACCOUNT_STORAGE_KEY);
-      return storedAccountRaw ? (JSON.parse(storedAccountRaw) as StoredAccount) : null;
-    } catch {
-      window.localStorage.removeItem(ACCOUNT_STORAGE_KEY);
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<AuthMode>("signup");
   const [error, setError] = useState<string | null>(null);
   const [googleNotice, setGoogleNotice] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState(() => getInitialForm("signup"));
   const [showPassword, setShowPassword] = useState(false);
   const pendingRequestRef = useRef<AuthRequest | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    let unsubscribe = () => {};
+
+    if (!isFirebaseConfigured || !firebaseAuth) {
+      setIsAuthReady(true);
+      return;
+    }
+
+    void ensureFirebaseAuthPersistence()
+      .catch(() => undefined)
+      .finally(() => {
+        if (isCancelled || !firebaseAuth) {
+          return;
+        }
+
+        unsubscribe = onAuthStateChanged(firebaseAuth, (nextFirebaseUser) => {
+          if (isCancelled) {
+            return;
+          }
+
+          setUser(nextFirebaseUser ? toAuthUser(nextFirebaseUser) : null);
+          setIsAuthReady(true);
+        });
+      });
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   const closeModal = useCallback(() => {
     const closeRedirectTo = pendingRequestRef.current?.closeRedirectTo;
@@ -103,31 +221,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setGoogleNotice(null);
     setShowPassword(false);
+    setIsSubmitting(false);
 
     if (closeRedirectTo) {
       router.push(closeRedirectTo);
     }
   }, [router]);
 
-  const continueAfterAuth = useCallback((authenticatedUser: AuthUser) => {
-    setUser(authenticatedUser);
-    window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authenticatedUser));
-    const pending = pendingRequestRef.current;
-    pendingRequestRef.current = null;
-    setIsOpen(false);
-    setError(null);
-    setGoogleNotice(null);
-    setShowPassword(false);
+  const continueAfterAuth = useCallback(
+    (authenticatedFirebaseUser: FirebaseUser) => {
+      setUser(toAuthUser(authenticatedFirebaseUser));
+      const pending = pendingRequestRef.current;
+      pendingRequestRef.current = null;
+      setIsOpen(false);
+      setError(null);
+      setGoogleNotice(null);
+      setShowPassword(false);
+      setIsSubmitting(false);
 
-    if (pending?.onSuccess) {
-      pending.onSuccess();
-      return;
-    }
+      if (pending?.onSuccess) {
+        pending.onSuccess();
+        return;
+      }
 
-    if (pending?.redirectTo) {
-      router.push(pending.redirectTo);
-    }
-  }, [router]);
+      if (pending?.redirectTo) {
+        router.push(pending.redirectTo);
+      }
+    },
+    [router],
+  );
 
   const openAuthModal = useCallback((request?: AuthRequest) => {
     const nextMode = request?.mode || "signup";
@@ -137,6 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setGoogleNotice(null);
     setShowPassword(false);
+    setIsSubmitting(false);
     setIsOpen(true);
   }, [user]);
 
@@ -157,83 +280,108 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     openAuthModal(request);
   }, [openAuthModal, router, user]);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
-    router.push("/");
+  const logout = useCallback(async () => {
+    try {
+      if (firebaseAuth) {
+        await signOut(firebaseAuth);
+      }
+    } finally {
+      setUser(null);
+      router.push("/");
+    }
   }, [router]);
 
-  const updateProfile = useCallback((updates: Partial<AuthUser>) => {
-    setUser((currentUser) => {
-      if (!currentUser) {
-        return currentUser;
+  const updateProfile = useCallback(
+    async (updates: Partial<AuthUser>) => {
+      if (!firebaseAuth?.currentUser || !user) {
+        return;
       }
 
-      const nextUser = { ...currentUser, ...updates };
-      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-
-      setAccount((currentAccount) => {
-        if (!currentAccount) {
-          return currentAccount;
-        }
-
-        const nextAccount = { ...currentAccount, ...updates };
-        window.localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(nextAccount));
-        return nextAccount;
+      const currentFirebaseUser = firebaseAuth.currentUser;
+      const nextFirstName = updates.firstName?.trim() || user.firstName;
+      const nextLastName = updates.lastName?.trim() || user.lastName;
+      const nextProfileOverride = saveStoredProfile(currentFirebaseUser.uid, {
+        firstName: nextFirstName,
+        lastName: nextLastName,
+        company: updates.company?.trim() || user.company,
+        role: updates.role?.trim() || user.role,
       });
+      const nextDisplayName = buildFullName(nextFirstName, nextLastName);
 
-      return nextUser;
-    });
-  }, []);
+      if (nextDisplayName && currentFirebaseUser.displayName !== nextDisplayName) {
+        await updateFirebaseProfile(currentFirebaseUser, { displayName: nextDisplayName });
+      }
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+      setUser(toAuthUser(currentFirebaseUser, nextProfileOverride));
+    },
+    [user],
+  );
+
+  const submit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setGoogleNotice(null);
 
-    if (mode === "signup") {
-      if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password.trim()) {
-        setError("Complete the required fields before creating your account.");
+    if (!isFirebaseConfigured || !firebaseAuth) {
+      setError("Firebase is not connected yet. Add your NEXT_PUBLIC_FIREBASE_* values in .env.local first.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "signup") {
+        if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password.trim()) {
+          setError("Complete the required fields before creating your account.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const credential = await createUserWithEmailAndPassword(firebaseAuth, form.email.trim(), form.password);
+        const fullName = buildFullName(form.firstName.trim(), form.lastName.trim());
+
+        if (fullName) {
+          await updateFirebaseProfile(credential.user, { displayName: fullName });
+        }
+
+        saveStoredProfile(credential.user.uid, {
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          company: form.company.trim(),
+          role: form.role.trim(),
+        });
+
+        continueAfterAuth(credential.user);
         return;
       }
 
-      if (account && account.email.toLowerCase() === form.email.trim().toLowerCase()) {
-        setError("An account with this email already exists. Sign in instead.");
-        return;
-      }
-
-      const nextAccount: StoredAccount = {
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        email: form.email.trim(),
-        company: form.company.trim(),
-        role: form.role.trim(),
-        password: form.password,
-      };
-
-      setAccount(nextAccount);
-      window.localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(nextAccount));
-      continueAfterAuth(toUser(nextAccount));
-      return;
+      const credential = await signInWithEmailAndPassword(firebaseAuth, form.email.trim(), form.password);
+      continueAfterAuth(credential.user);
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError));
+      setIsSubmitting(false);
     }
+  }, [continueAfterAuth, form, mode]);
 
-    if (!account) {
-      setError("No local account was found yet. Sign up first.");
-      return;
-    }
-
-    if (account.email.toLowerCase() !== form.email.trim().toLowerCase() || account.password !== form.password) {
-      setError("Your email or password is incorrect.");
-      return;
-    }
-
-    continueAfterAuth(toUser(account));
-  };
-
-  const continueWithGoogle = useCallback(() => {
+  const continueWithGoogle = useCallback(async () => {
     setError(null);
-    setGoogleNotice("Google sign-in is ready in the UI, but it still needs NEXT_PUBLIC_GOOGLE_CLIENT_ID before it can complete a live Google login.");
-  }, []);
+    setGoogleNotice(null);
+
+    if (!isFirebaseConfigured || !firebaseAuth || !googleAuthProvider) {
+      setError("Firebase is not connected yet. Add your NEXT_PUBLIC_FIREBASE_* values in .env.local first.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const credential = await signInWithPopup(firebaseAuth, googleAuthProvider);
+      continueAfterAuth(credential.user);
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError));
+      setIsSubmitting(false);
+    }
+  }, [continueAfterAuth]);
 
   const switchMode = useCallback((nextMode: AuthMode) => {
     setMode(nextMode);
@@ -241,18 +389,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setGoogleNotice(null);
     setShowPassword(false);
+    setIsSubmitting(false);
   }, [user]);
 
   const value: AuthContextValue = useMemo(
     () => ({
       user,
       isAuthenticated: Boolean(user),
+      isAuthReady,
       openAuthModal,
       runAuthenticated,
       logout,
       updateProfile,
     }),
-    [logout, openAuthModal, runAuthenticated, updateProfile, user],
+    [isAuthReady, logout, openAuthModal, runAuthenticated, updateProfile, user],
   );
 
   return (
@@ -260,7 +410,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {isOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(7,10,18,0.58)] px-4 py-10">
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(7,10,18,0.58)] px-4 py-10"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
+          }}
+        >
           <div className="w-full max-w-[28rem] rounded-[2rem] border border-black/8 bg-[#fbf8f3] p-6 shadow-[0_30px_90px_rgba(7,10,18,0.24)] sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -268,8 +425,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <h2 className="mt-2 text-3xl font-semibold text-[#181614]">{mode === "signup" ? "Create your account" : "Welcome back"}</h2>
                 <p className="mt-2 text-sm leading-6 text-[#645b51]">
                   {mode === "signup"
-                    ? "Save your details, unlock protected pages, and keep your profile available across sessions on this browser."
-                    : "Sign in to continue where you left off and access the page or action you clicked."}
+                    ? "Create a real Firebase account with email and password, or continue with Google."
+                    : "Log in with your Firebase account to continue to the exact page you clicked."}
                 </p>
               </div>
               <button type="button" onClick={closeModal} className="rounded-full border border-black/8 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#3d3935]">
@@ -296,11 +453,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             <button
               type="button"
-              onClick={continueWithGoogle}
-              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614]"
+              onClick={() => void continueWithGoogle()}
+              disabled={isSubmitting}
+              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <GoogleIcon className="h-5 w-5" />
-              Continue with Google
+              {isSubmitting ? "Working..." : "Continue with Google"}
             </button>
 
             <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-[#8d8479]">
@@ -309,7 +467,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               <span className="h-px flex-1 bg-black/8" />
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={submit}>
+            <form className="mt-5 space-y-4" onSubmit={(event) => void submit(event)}>
               {mode === "signup" ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="space-y-2">
@@ -390,8 +548,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               {error ? <p className="text-sm text-[#9c5b43]">{error}</p> : null}
               {googleNotice ? <p className="text-sm text-[#20584f]">{googleNotice}</p> : null}
 
-              <button type="submit" className="interactive-pop w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white">
-                {mode === "signup" ? "Create account" : "Log in"}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="interactive-pop w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? "Working..." : mode === "signup" ? "Create account" : "Log in"}
               </button>
             </form>
           </div>

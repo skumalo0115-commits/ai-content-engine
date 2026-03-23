@@ -6,7 +6,7 @@ import { useAuth } from "@/app/components/AuthProvider";
 import { heroSlides } from "@/app/lib/hero-slides";
 
 export default function ProfilePage() {
-  const { user, updateProfile, openAuthModal } = useAuth();
+  const { user, isAuthReady, updateProfile, openAuthModal } = useAuth();
   const [heroImage] = useState(() => heroSlides[Math.floor(Math.random() * heroSlides.length)]?.src || "/hero-slide-1.png");
   const [form, setForm] = useState({
     firstName: "",
@@ -28,10 +28,26 @@ export default function ProfilePage() {
       : form;
 
   useEffect(() => {
-    if (!user) {
-      openAuthModal({ mode: "signin", redirectTo: "/profile" });
+    if (isAuthReady && !user) {
+      openAuthModal({ mode: "signin", redirectTo: "/profile", closeRedirectTo: "/" });
     }
-  }, [openAuthModal, user]);
+  }, [isAuthReady, openAuthModal, user]);
+
+  if (!isAuthReady) {
+    return (
+      <MarketingShell>
+        <div
+          className="pointer-events-none fixed inset-0 -z-[9] bg-cover bg-center"
+          style={{ backgroundImage: `url('${heroImage}')` }}
+        />
+        <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(244,240,232,0.82)]" />
+        <section className="glass-panel mx-auto mt-12 max-w-2xl rounded-[2rem] p-8 text-center">
+          <p className="editorial-label text-xs">Profile</p>
+          <h1 className="mt-3 text-3xl font-semibold text-[#181614]">Loading your account...</h1>
+        </section>
+      </MarketingShell>
+    );
+  }
 
   if (!user) {
     return (
@@ -83,7 +99,7 @@ export default function ProfilePage() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            updateProfile(visibleForm);
+            void updateProfile(visibleForm);
           }}
           className="glass-panel rounded-[2rem] p-7"
         >
@@ -109,9 +125,10 @@ export default function ProfilePage() {
               <input
                 type="email"
                 value={visibleForm.email}
-                onChange={(event) => setForm((current) => ({ ...(hasLocalEdits ? current : visibleForm), email: event.target.value }))}
-                className="w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-[#181614] outline-none transition focus:border-[#20584f]/30"
+                readOnly
+                className="w-full rounded-[1rem] border border-black/8 bg-[#f4efe7] px-4 py-3 text-sm text-[#7b7267] outline-none"
               />
+              <p className="text-xs text-[#7b7267]">Email is currently managed by Firebase Authentication.</p>
             </label>
             <label className="space-y-2">
               <span className="text-sm font-medium text-[#433d36]">Company</span>
@@ -132,7 +149,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[#6b6257]">Changes are saved locally for this browser profile.</p>
+            <p className="text-sm text-[#6b6257]">Name is synced with Firebase. Company and role stay saved on this browser for now.</p>
             <button type="submit" className="interactive-pop rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white">
               Save profile
             </button>
