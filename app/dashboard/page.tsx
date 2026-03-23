@@ -9,7 +9,7 @@ import { InputForm } from "@/app/components/InputForm";
 import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
-import { deleteSavedStrategy, getSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
+import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan } from "@/app/lib/usage";
 import type { GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
@@ -122,6 +122,7 @@ function DashboardPageInner() {
 
   const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
+  const currentStrategyAlreadySaved = lastBrief ? hasSavedStrategy({ brief: lastBrief, strategy }) : false;
 
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
@@ -278,7 +279,8 @@ function DashboardPageInner() {
                   isLocked={isLocked}
                   showSaveButton={canSaveCurrentStrategy}
                   onSave={handleSaveStrategy}
-                  saveLabel="Save to Saved Content"
+                  saveLabel={currentStrategyAlreadySaved ? "Already saved" : "Save to Saved Content"}
+                  isSaveDisabled={currentStrategyAlreadySaved}
                 />
               </section>
             </>
@@ -334,39 +336,42 @@ function DashboardPageInner() {
 
                     return (
                       <div key={item.id} className="rounded-2xl border border-black/6 bg-white/88 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.05)] transition hover:border-black/12 hover:bg-white">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="editorial-label text-xs">Selected saved brief</p>
-                            <div className="mt-4 space-y-4">
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
-                                <p className="mt-2 text-sm text-[#181614]">{item.brief.businessType}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
-                                <p className="mt-2 text-sm text-[#181614]">{item.brief.targetAudience}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
-                                <p className="mt-2 text-sm text-[#181614]">{item.brief.goal}</p>
-                              </div>
+                        <div className="flex flex-col gap-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="editorial-label text-xs">Selected saved brief</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedSavedId(item.id)}
+                                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
+                              >
+                                View
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSavedStrategy(item.id)}
+                                className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3]"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setExpandedSavedId(item.id)}
-                              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
-                            >
-                              View
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSavedStrategy(item.id)}
-                              className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3]"
-                            >
-                              Delete
-                            </button>
+
+                          <div className="grid gap-4 md:grid-cols-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
+                              <p className="mt-2 text-sm text-[#181614]">{item.brief.businessType}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
+                              <p className="mt-2 text-sm text-[#181614]">{item.brief.targetAudience}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
+                              <p className="mt-2 text-sm text-[#181614]">{item.brief.goal}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -386,8 +391,8 @@ function DashboardPageInner() {
             <div className="glass-panel rounded-[28px] p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="editorial-label text-xs">Launch beta notes</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[#181614]">Pro access is unlocked per browser in this first launch version.</h2>
+                <p className="editorial-label text-xs">How to use this workspace well</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[#181614]">Generate a clear plan, save the best ones, and reuse what starts working.</h2>
               </div>
               {plan === "pro" ? (
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#e6efeb] px-4 py-2 text-sm text-[#20584f]">
@@ -397,7 +402,10 @@ function DashboardPageInner() {
               ) : null}
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-[#5f584f]">
-              Sign-in is now live, but saved strategies, the free limit, and the Pro unlock are still stored on this browser in this launch version so the experience stays fast and easy to test on localhost.
+              Start with one focused brief, save the versions you like most, then compare them side by side in Saved Content. Use the five-day plan as your posting checklist, and keep refining your prompts until the strategy sounds like something you would actually post this week.
+            </p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5f584f]">
+              A good brief usually includes the kind of business you run, exactly who you want to reach, and the one result you care about most right now, like more sales, more bookings, or more profile visits.
             </p>
             </div>
           ) : null}

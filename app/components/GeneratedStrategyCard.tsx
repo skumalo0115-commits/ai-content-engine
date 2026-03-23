@@ -12,6 +12,7 @@ type GeneratedStrategyCardProps = {
   showSaveButton?: boolean;
   onSave?: () => void;
   saveLabel?: string;
+  isSaveDisabled?: boolean;
 };
 
 function TypedText({ text, className }: { text: string; className?: string }) {
@@ -45,6 +46,7 @@ export function GeneratedStrategyCard({
   showSaveButton = false,
   onSave,
   saveLabel = "Save",
+  isSaveDisabled = false,
 }: GeneratedStrategyCardProps) {
   return (
     <motion.article
@@ -64,7 +66,12 @@ export function GeneratedStrategyCard({
               <button
                 type="button"
                 onClick={onSave}
-                className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.12]"
+                disabled={isSaveDisabled}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  isSaveDisabled
+                    ? "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/45"
+                    : "border-white/16 bg-white/[0.06] text-white hover:bg-white/[0.12]"
+                }`}
               >
                 <BookmarkIcon className="h-4 w-4" />
                 {saveLabel}

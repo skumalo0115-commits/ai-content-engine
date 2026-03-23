@@ -21,7 +21,12 @@ const sections = [
 
 export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, savedCount, onChangeView }: SidebarProps) {
   return (
-    <motion.aside initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="glass-panel w-full rounded-[28px] p-5 md:w-72">
+    <motion.aside
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="glass-panel w-full self-start rounded-[28px] p-5 md:w-72 lg:sticky lg:top-24"
+    >
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
         <p className="editorial-label text-xs">Launch Plan</p>
         <p className="mt-2 text-xl font-semibold text-[#181614]">{currentPlan}</p>
@@ -61,9 +66,13 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
                 <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${isActive ? "bg-[#181614] text-white" : "bg-[#e6efeb] text-[#20584f]"}`}>
                   <Icon className="h-4 w-4" />
                 </span>
-                <span>
-                  {section.title}
-                  {section.view === "saved" && savedCount > 0 ? <span className="ml-2 text-xs text-[#7a7269]">{savedCount}</span> : null}
+                <span className="flex items-center gap-2">
+                  <span>{section.title}</span>
+                  {section.view === "saved" && savedCount > 0 ? (
+                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#efe7dc] px-2 py-0.5 text-[11px] font-semibold text-[#6a6156]">
+                      {savedCount}
+                    </span>
+                  ) : null}
                 </span>
               </span>
               <span className={`text-xs uppercase tracking-[0.22em] ${isDisabled ? "text-[#8a8278]" : "text-[#20584f]"}`}>{section.status}</span>
