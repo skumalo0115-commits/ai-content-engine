@@ -165,11 +165,11 @@ export default function HomePage() {
                 title: "Generate a content pack",
                 text: "Get a caption, a video idea, hashtags, and a mini posting plan in one clean batch.",
               },
-              {
-                step: "03",
-                title: "Move from DIY testing to faster output",
-                text: "Stay on the free plan while you test, then unlock Pro when you need more than the daily cap.",
-              },
+                {
+                  step: "03",
+                  title: "Scale the content that gets results",
+                  text: "Stay on the free plan while you test, then unlock Pro when you need more than the daily cap.",
+                },
             ].map((item) => (
               <div key={item.step} className="grid gap-3 border-b border-black/6 pb-5 last:border-b-0 last:pb-0 sm:grid-cols-[70px_1fr]">
                 <p className="text-sm font-semibold text-[#20584f]">{item.step}</p>
