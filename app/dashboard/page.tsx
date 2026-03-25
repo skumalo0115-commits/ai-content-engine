@@ -306,13 +306,13 @@ function DashboardPageInner() {
               </div>
 
               {savedStrategies.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="space-y-4">
                   {savedStrategies.map((item) => {
                     const isExpanded = item.id === expandedSavedId;
 
                     if (isExpanded) {
                       return (
-                        <div key={item.id} className="relative md:col-span-2 xl:col-span-3">
+                        <div key={item.id} className="relative">
                           <div className="absolute right-4 top-4 z-10 flex gap-2">
                             <button
                               type="button"
