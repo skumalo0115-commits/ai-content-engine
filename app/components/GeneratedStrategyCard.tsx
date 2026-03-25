@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BookmarkIcon } from "@/app/components/Icons";
@@ -125,9 +126,17 @@ export function GeneratedStrategyCard({
                 href={video.url}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white transition hover:bg-white/[0.08]"
+                className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white transition hover:bg-white/[0.08]"
               >
-                {video.title}
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-white">{video.title}</p>
+                  {video.channel ? <p className="mt-1 text-xs text-white/45">{video.channel}</p> : null}
+                </div>
+                {video.thumbnailUrl ? (
+                  <span className="relative h-9 w-14 shrink-0 overflow-hidden rounded-md border border-white/10">
+                    <Image src={video.thumbnailUrl} alt={video.title} fill sizes="56px" className="object-cover" />
+                  </span>
+                ) : null}
               </a>
             ))}
           </div>

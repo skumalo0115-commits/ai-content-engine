@@ -20,6 +20,8 @@ export type StrategyDayPlan = {
 export type VideoRecommendation = {
   title: string;
   url: string;
+  thumbnailUrl?: string;
+  channel?: string;
 };
 
 export type GeneratedStrategy = {

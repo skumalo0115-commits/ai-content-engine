@@ -1,5 +1,6 @@
 import { DEFAULT_OPENROUTER_MODEL, getBaseUrl, siteConfig } from "./site";
 import type { GeneratePayload, GenerateContentResponse, GeneratedStrategy, StrategyDayPlan, VideoRecommendation } from "./types";
+import { pickCuratedVideoRecommendations } from "./video-library";
 
 const openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -218,6 +219,8 @@ function parseAiJson(raw: string) {
     video_topics?: unknown;
   };
 
+  const suggestedVideoTopics = toStringArray(parsed.video_topics);
+
   const strategy: GeneratedStrategy = {
     title: cleanText(parsed.title || "Your next five-day social content move"),
     overview: cleanText(parsed.overview || ""),
@@ -233,7 +236,7 @@ function parseAiJson(raw: string) {
     throw new Error("The AI response was incomplete.");
   }
 
-  return strategy;
+  return { strategy, suggestedVideoTopics };
 }
 
 async function generateOpenRouterItems(payload: GeneratePayload) {
@@ -289,9 +292,18 @@ async function generateOpenRouterItems(payload: GeneratePayload) {
     throw new Error("OpenRouter returned an empty response.");
   }
 
+  const parsedResponse = parseAiJson(rawContent);
+
   return {
     source: "openrouter" as const,
-    strategy: parseAiJson(rawContent),
+    strategy: {
+      ...parsedResponse.strategy,
+      videoRecommendations: pickCuratedVideoRecommendations({
+        payload: validated,
+        strategy: parsedResponse.strategy,
+        suggestedTopics: parsedResponse.suggestedVideoTopics,
+      }),
+    },
     meta: {
       model,
     },

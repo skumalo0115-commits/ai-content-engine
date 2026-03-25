@@ -12,6 +12,7 @@ import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan } from "@/app/lib/usage";
+import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 import { CrownIcon } from "../components/Icons";
 
@@ -35,9 +36,7 @@ const starterStrategy: GeneratedStrategy = {
     { day: "Day 5", platform: "Community", action: "Review performance and create a follow-up post based on what got the best response." },
   ],
   videoRecommendations: [
-    { title: "Instagram content strategy for small business", url: "https://www.youtube.com/results?search_query=Instagram+content+strategy+for+small+business" },
-    { title: "TikTok hooks for business videos", url: "https://www.youtube.com/results?search_query=TikTok+hooks+for+business+videos" },
-    { title: "5 day social media content plan", url: "https://www.youtube.com/results?search_query=5+day+social+media+content+plan" },
+    ...getDefaultVideoRecommendations().slice(0, 3),
   ],
 };
 
