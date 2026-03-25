@@ -1,36 +1,165 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 AI Content Engine
 
-## Getting Started
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<!-- Add product screenshot / hero image here -->
+
+AI Content Engine (ACE) is a Next.js 16 app that helps small businesses generate practical, channel-specific social content plans in seconds ⚡. It turns three inputs (business type, target audience, and goal) into a five-day execution blueprint with ready-to-use ideas for Instagram, TikTok, Facebook/LinkedIn, hashtags, and learning resources 📈.
+
+## 🎯 Why this exists
+
+Most businesses know they *should* post consistently but struggle with what to post next 🤔. ACE is built to reduce that friction by giving users a concrete action plan they can execute immediately ✅.
+
+## 🧠 Core capabilities
+
+- **AI strategy generation** via OpenRouter (`/api/generate-content`) 🤖.
+- **Structured outputs**: title, overview, Instagram plan, TikTok plan, Facebook/LinkedIn plan, hashtag plan, and a 5-day action plan 🗂️.
+- **Curated video recommendations** to help users execute each strategy 🎥.
+- **Local free-tier usage tracking** (5 free generations/day per browser) 🆓.
+- **Stripe checkout + verification flow** for Pro upgrades 💳.
+- **Firebase Auth support** (Google provider, browser persistence) 🔐.
+
+## 🧩 Full blueprint
+
+### 1) 🛠️ Product flow
+
+1. User opens the marketing site/dashboard.
+2. User submits:
+   - business type
+   - target audience
+   - goal
+3. API validates payload (required fields + max lengths).
+4. Server requests generation from OpenRouter.
+5. Response is parsed into strict JSON sections.
+6. UI renders a practical 5-day strategy and related recommendations.
+7. Free plan usage is tracked in localStorage.
+8. User can upgrade to Pro through Stripe checkout.
+
+### 2) 🏗️ System architecture
+
+- **Frontend**: Next.js App Router with React 19 + TypeScript ⚛️.
+- **Styling/UX**: Tailwind CSS 4, Framer Motion, and Three.js scene components 🎨.
+- **Backend routes**:
+  - `POST /api/generate-content`
+  - `POST /api/checkout`
+  - `GET /api/checkout/verify`
+- **AI provider**: OpenRouter chat completions API 🤖.
+- **Payments**: Stripe subscriptions 💸.
+- **Auth**: Firebase client auth utilities 🔐.
+- **Config source of truth**: `app/lib/site.ts`.
+
+### 3) 📦 Data contract (AI output shape)
+
+The generation pipeline expects these JSON keys:
+
+- `title`
+- `overview`
+- `instagram_plan`
+- `tiktok_plan`
+- `facebook_linkedin_plan`
+- `hashtag_plan`
+- `five_day_plan` (exactly 5 items)
+- `video_topics` (3 to 4 items)
+
+### 4) 📊 Plans and limits
+
+- **Free**: 5 generations/day (browser-local tracking) 🆓.
+- **Pro**: unlimited generations (subscription flow scaffolded with Stripe) 🌟.
+
+### 5) 🗺️ Project structure
+
+```text
+app/
+  api/
+    generate-content/route.ts
+    checkout/route.ts
+    checkout/verify/route.ts
+  components/
+  lib/
+    generator.ts
+    site.ts
+    usage.ts
+    stripe.ts
+    firebase.ts
+  dashboard/page.tsx
+  pricing/page.tsx
+  page.tsx
+public/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧰 Tech stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js 16.2
+- **Language**: TypeScript 5
+- **UI**: React 19, Tailwind CSS 4, Framer Motion
+- **3D/visuals**: Three.js + React Three Fiber + Drei
+- **AI**: OpenRouter
+- **Payments**: Stripe
+- **Auth**: Firebase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔧 Environment variables
 
-## Learn More
+Create `.env.local` in the project root:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# App
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# OpenRouter
+OPENROUTER_API_KEY=...
+OPENROUTER_MODEL=openai/gpt-4o-mini
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Stripe
+STRIPE_SECRET_KEY=...
+STRIPE_PRO_PRICE_ID=...
 
-## Deploy on Vercel
+# Firebase (client)
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ▶️ Run locally
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## 📜 Scripts
+
+- `npm run dev` – start local dev server 🧪
+- `npm run build` – production build 🏁
+- `npm run start` – run production server 🌐
+- `npm run lint` – lint codebase 🔍
+
+## 💬 Codex conversation profile (description + skills)
+
+Use this in Codex chat when you want a quick project context:
+
+**Description**
+> AI Content Engine generates practical five-day social media execution plans for small businesses using OpenRouter, with a free-tier flow and Stripe-based Pro upgrades 🚀.
+
+**Skills**
+- Product strategy framing for early-stage SaaS 🧭
+- Prompt and output-structure design for AI marketing workflows ✍️
+- Next.js app architecture and feature decomposition 🧱
+- Growth-oriented landing page and conversion copy 📣
+- API-first integration planning (OpenRouter, Stripe, Firebase) 🔌
+
+## 🛣️ Roadmap ideas
+
+- Save and export generated strategies 💾.
+- Team collaboration and shared workspaces 🤝.
+- Calendar integrations and scheduled posting workflows 🗓️.
+- Brand voice memory and campaign history 🧬.
+- Analytics feedback loop for recommendation tuning 📈.
+
+## 📄 License
+
+Private project. Add a license before public distribution.
