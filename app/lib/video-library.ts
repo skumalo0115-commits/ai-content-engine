@@ -61,6 +61,48 @@ const curatedVideos: CuratedVideo[] = [
     thumbnailUrl: "https://i.ytimg.com/vi/qEpT41CGPow/mqdefault.jpg",
     keywords: ["captions", "instagram", "sales", "conversion", "small business", "copywriting", "online store"],
   },
+  {
+    title: "What is Instagram Shop & how to use it",
+    channel: "Learn With Shopify",
+    url: "https://www.youtube.com/watch?v=Tw3d60f1_dw",
+    thumbnailUrl: "https://i.ytimg.com/vi/Tw3d60f1_dw/mqdefault.jpg",
+    keywords: ["instagram shop", "shopify", "online store", "ecommerce", "sales", "product selling", "instagram"],
+  },
+  {
+    title: "BEST Instagram Growth Strategy for Small Business 2026",
+    channel: "Adam Erhart",
+    url: "https://www.youtube.com/watch?v=sjKjbSLN4VI",
+    thumbnailUrl: "https://i.ytimg.com/vi/sjKjbSLN4VI/mqdefault.jpg",
+    keywords: ["instagram", "growth", "small business", "followers", "reels", "engagement", "organic growth"],
+  },
+  {
+    title: "How To Make Any Reel Go Viral",
+    channel: "Modern Millie",
+    url: "https://www.youtube.com/watch?v=LdudG-_-q0s",
+    thumbnailUrl: "https://i.ytimg.com/vi/LdudG-_-q0s/mqdefault.jpg",
+    keywords: ["reels", "viral", "instagram", "short video", "hooks", "engagement", "content strategy"],
+  },
+  {
+    title: "How to market your business using social media",
+    channel: "Erica Martin | Marketing & Social Media Expert",
+    url: "https://www.youtube.com/watch?v=x1ioqjSNNe0",
+    thumbnailUrl: "https://i.ytimg.com/vi/x1ioqjSNNe0/mqdefault.jpg",
+    keywords: ["social media", "business", "marketing", "small business", "strategy", "content", "awareness"],
+  },
+  {
+    title: "Why Your Instagram Hashtags Aren't Working & How To Fix Them",
+    channel: "Modern Millie",
+    url: "https://www.youtube.com/watch?v=R1lmX3Ypa4k",
+    thumbnailUrl: "https://i.ytimg.com/vi/R1lmX3Ypa4k/mqdefault.jpg",
+    keywords: ["hashtags", "instagram", "discoverability", "reach", "strategy", "small business", "engagement"],
+  },
+  {
+    title: "TikTok Live Shopping: How to sell your products and services live on TikTok",
+    channel: "Learn With Shopify",
+    url: "https://www.youtube.com/watch?v=-SzX6fkjnmM",
+    thumbnailUrl: "https://i.ytimg.com/vi/-SzX6fkjnmM/mqdefault.jpg",
+    keywords: ["tiktok", "live shopping", "products", "services", "sales", "ecommerce", "online store"],
+  },
 ];
 
 function tokenize(value: string) {
@@ -122,10 +164,17 @@ export function pickCuratedVideoRecommendations({
     })
     .sort((a, b) => b.score - a.score);
 
-  const selected = ranked
-    .filter(({ score }, index) => score > 0 || index < 4)
-    .slice(0, 4)
-    .map(({ video }) => toVideoRecommendation(video));
+  const candidatePool = ranked.filter(({ score }, index) => score > 0 || index < 6).slice(0, 8);
+  const shuffledPool = [...candidatePool];
+
+  for (let index = shuffledPool.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledPool[index], shuffledPool[randomIndex]] = [shuffledPool[randomIndex], shuffledPool[index]];
+  }
+
+  const anchor = candidatePool[0] ? [candidatePool[0]] : [];
+  const rotatingCandidates = shuffledPool.filter(({ video }) => !anchor.some((entry) => entry.video.url === video.url));
+  const selected = [...anchor, ...rotatingCandidates].slice(0, 4).map(({ video }) => toVideoRecommendation(video));
 
   return selected.length > 0 ? selected : getDefaultVideoRecommendations();
 }
