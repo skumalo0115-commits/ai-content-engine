@@ -208,7 +208,7 @@ export function GeneratedStrategyCard({
                     href={activeVideo.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-sm text-white transition hover:bg-white/[0.1]"
+                    className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-center text-sm text-white transition hover:bg-white/[0.1]"
                   >
                     Open on YouTube
                   </a>
