@@ -138,14 +138,8 @@ Open `http://localhost:3000`.
 - `npm run start` – run production server 🌐
 - `npm run lint` – lint codebase 🔍
 
-## 💬 Codex conversation profile (description + skills)
+## 💬 kills
 
-Use this in Codex chat when you want a quick project context:
-
-**Description**
-> AI Content Engine generates practical five-day social media execution plans for small businesses using OpenRouter, with a free-tier flow and Stripe-based Pro upgrades 🚀.
-
-**Skills**
 - Product strategy framing for early-stage SaaS 🧭
 - Prompt and output-structure design for AI marketing workflows ✍️
 - Next.js app architecture and feature decomposition 🧱
