@@ -155,4 +155,4 @@ Open `http://localhost:3000`.
 
 ## 📄 License
 
-Private project. Add a license before public distribution.
+[MIT License](https://github.com/skumalo0115-commits/ai-content-engine/blob/main/LICENSE)
