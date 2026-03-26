@@ -1,11 +1,11 @@
+import { ContactForm } from "@/app/components/ContactForm";
 import { MarketingShell } from "@/app/components/MarketingShell";
 import { siteConfig } from "@/app/lib/site";
-import { GlobeIcon, MailIcon, WhatsAppIcon } from "../components/Icons";
+import { MailIcon, WhatsAppIcon } from "../components/Icons";
 
 const contactItems = [
   { label: "WhatsApp", href: siteConfig.whatsappHref, icon: WhatsAppIcon, value: "Start a WhatsApp chat" },
   { label: "Email", href: `mailto:${siteConfig.email}`, icon: MailIcon, value: "Send an email" },
-  { label: "Portfolio", href: siteConfig.portfolioHref, icon: GlobeIcon, value: "View portfolio" },
 ];
 
 export default function ContactPage() {
@@ -24,26 +24,30 @@ export default function ContactPage() {
         </p>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {contactItems.map((item) => {
-          const Icon = item.icon;
+      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <ContactForm />
 
-          return (
-            <a
-              key={item.label}
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-              className="glass-panel rounded-[28px] p-6 transition hover:border-[#20584f]/20 hover:bg-white"
-            >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6efeb] text-[#20584f]">
-                <Icon className="h-5 w-5" />
-              </span>
-              <h2 className="mt-4 text-xl font-semibold text-[#181614]">{item.label}</h2>
-              <p className="mt-2 text-sm text-[#5f584f]">{item.value}</p>
-            </a>
-          );
-        })}
+        <div className="grid gap-5 self-start md:grid-cols-2 xl:grid-cols-1">
+          {contactItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                className="glass-panel rounded-[28px] p-6 transition hover:border-[#20584f]/20 hover:bg-white"
+              >
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e6efeb] text-[#20584f]">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h2 className="mt-4 text-xl font-semibold text-[#181614]">{item.label}</h2>
+                <p className="mt-2 text-sm text-[#5f584f]">{item.value}</p>
+              </a>
+            );
+          })}
+        </div>
       </section>
     </MarketingShell>
   );

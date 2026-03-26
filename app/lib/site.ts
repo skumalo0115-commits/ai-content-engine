@@ -42,7 +42,6 @@ export const footerPageLinks: ContactLink[] = [
 
 export const contactLinks: ContactLink[] = [
   { href: siteConfig.whatsappHref, label: "WhatsApp" },
-  { href: siteConfig.portfolioHref, label: "Portfolio" },
   { href: `mailto:${siteConfig.email}`, label: "Email" },
 ];
 
