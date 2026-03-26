@@ -51,10 +51,22 @@ export function Footer() {
 
         <div className="space-y-3 text-sm text-[#6f685f]">
           <p className="font-semibold text-[#181614]">Launch Contact</p>
-          <p>{siteConfig.email}</p>
-          <a href={siteConfig.phoneHref} className="footer-link-pop -ml-2 inline-block transition hover:text-[#181614]">
-            {siteConfig.phoneDisplay}
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={`mailto:${siteConfig.email}`}
+              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/6 bg-white px-4 py-2 text-sm text-[#4d463f] transition hover:border-[#20584f]/20 hover:text-[#181614]"
+            >
+              Email
+            </a>
+            <a
+              href={siteConfig.whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/6 bg-white px-4 py-2 text-sm text-[#4d463f] transition hover:border-[#20584f]/20 hover:text-[#181614]"
+            >
+              WhatsApp
+            </a>
+          </div>
           <p>Need help choosing a plan or setting up your first content brief? Reach out and we&apos;ll point you in the right direction.</p>
         </div>
       </div>

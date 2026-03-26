@@ -1,12 +1,10 @@
 import { MarketingShell } from "@/app/components/MarketingShell";
 import { siteConfig } from "@/app/lib/site";
-import { FacebookIcon, GlobeIcon, LinkedInIcon, MailIcon, WhatsAppIcon } from "../components/Icons";
+import { GlobeIcon, MailIcon, WhatsAppIcon } from "../components/Icons";
 
 const contactItems = [
-  { label: "WhatsApp", href: siteConfig.whatsappHref, icon: WhatsAppIcon, value: siteConfig.phoneDisplay },
-  { label: "Email", href: `mailto:${siteConfig.email}`, icon: MailIcon, value: siteConfig.email },
-  { label: "Facebook", href: siteConfig.facebookHref, icon: FacebookIcon, value: "IssUrSlime" },
-  { label: "LinkedIn", href: siteConfig.linkedinHref, icon: LinkedInIcon, value: "Sbahle Kumalo" },
+  { label: "WhatsApp", href: siteConfig.whatsappHref, icon: WhatsAppIcon, value: "Start a WhatsApp chat" },
+  { label: "Email", href: `mailto:${siteConfig.email}`, icon: MailIcon, value: "Send an email" },
   { label: "Portfolio", href: siteConfig.portfolioHref, icon: GlobeIcon, value: "View portfolio" },
 ];
 
