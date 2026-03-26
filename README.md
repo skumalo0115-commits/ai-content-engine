@@ -138,7 +138,7 @@ Open `http://localhost:3000`.
 - `npm run start` – run production server 🌐
 - `npm run lint` – lint codebase 🔍
 
-## 💬 kills
+## 💬 Skills
 
 - Product strategy framing for early-stage SaaS 🧭
 - Prompt and output-structure design for AI marketing workflows ✍️
