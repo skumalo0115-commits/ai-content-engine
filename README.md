@@ -1,9 +1,8 @@
 # 🚀 AI Content Engine
 
+<img width="1912" height="873" alt="image" src="https://github.com/user-attachments/assets/3a6a142b-f3aa-4d0d-9293-9a3e1dd95b72" />
 
-
-<!-- Add product screenshot / hero image here -->
-
+#
 AI Content Engine (ACE) is a Next.js 16 app that helps small businesses generate practical, channel-specific social content plans in seconds ⚡. It turns three inputs (business type, target audience, and goal) into a five-day execution blueprint with ready-to-use ideas for Instagram, TikTok, Facebook/LinkedIn, hashtags, and learning resources 📈.
 
 ## 🎯 Why this exists
