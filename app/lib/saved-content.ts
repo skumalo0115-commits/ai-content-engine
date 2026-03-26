@@ -1,6 +1,6 @@
 "use client";
 
-import type { GeneratePayload, GeneratedStrategy, SavedStrategy } from "./types";
+import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrategy } from "./types";
 
 const savedContentKey = "ace-saved-content-v1";
 
@@ -39,6 +39,15 @@ function isGeneratedStrategy(value: unknown): value is GeneratedStrategy {
   );
 }
 
+function isGeneratedCalendar(value: unknown): value is GeneratedCalendar {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<GeneratedCalendar>;
+  return typeof candidate.title === "string" && typeof candidate.summary === "string" && Array.isArray(candidate.entries);
+}
+
 function isGeneratePayload(value: unknown): value is GeneratePayload {
   if (!value || typeof value !== "object") {
     return false;
@@ -74,7 +83,8 @@ function getSavedContentFromStorage() {
         typeof candidate.id === "string" &&
         typeof candidate.createdAt === "string" &&
         isGeneratePayload(candidate.brief) &&
-        isGeneratedStrategy(candidate.strategy)
+        isGeneratedStrategy(candidate.strategy) &&
+        (candidate.calendar == null || isGeneratedCalendar(candidate.calendar))
       );
     });
   } catch {
@@ -122,6 +132,12 @@ export function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy:
 
 export function deleteSavedStrategy(id: string) {
   const nextEntries = getSavedStrategies().filter((entry) => entry.id !== id);
+  setSavedContent(nextEntries);
+  return nextEntries;
+}
+
+export function saveGeneratedCalendar(id: string, calendar: GeneratedCalendar) {
+  const nextEntries = getSavedStrategies().map((entry) => (entry.id === id ? { ...entry, calendar } : entry));
   setSavedContent(nextEntries);
   return nextEntries;
 }

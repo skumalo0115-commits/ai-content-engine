@@ -23,10 +23,31 @@ export default function PricingPage() {
       </section>
 
       <section className="glass-panel rounded-[32px] p-8">
-        <h2 className="text-2xl font-semibold text-[#181614]">What happens after checkout?</h2>
+        <h2 className="text-2xl font-semibold text-[#181614]">What Pro unlocks right now</h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5f584f]">
-          In this launch build, successful Stripe checkout unlocks Pro on the same browser you return to. That keeps the flow simple for localhost testing while still giving you a working upgrade path.
+          For your current testing flow, clicking the Pro button unlocks Pro instantly on this browser so you can use the premium features right away, including the saved-content schedule builder and the 14-day AI calendar.
         </p>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-[#5f584f]">
+          Later, the instant unlock can be removed and the live Stripe checkout flow can take over again without changing the actual Pro feature set.
+        </p>
+      </section>
+
+      <section className="glass-panel rounded-[32px] p-8">
+        <h2 className="text-2xl font-semibold text-[#181614]">How the live subscription flow will work</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          {[
+            ["01", "Choose Pro", "The customer lands on the pricing page and starts the monthly subscription."],
+            ["02", "Add card details", "They enter a debit or credit card in the hosted checkout flow and review the monthly amount."],
+            ["03", "Approve subscription", "Once the first payment succeeds, Pro features unlock and future monthly charges continue automatically."],
+            ["04", "Manage or cancel", "From the subscription area, the customer can cancel future deductions while previous successful payments stay non-refundable."],
+          ].map(([step, title, text]) => (
+            <div key={step} className="rounded-[24px] border border-black/6 bg-white/85 p-5">
+              <p className="text-sm font-semibold text-[#20584f]">{step}</p>
+              <h3 className="mt-3 text-lg font-semibold text-[#181614]">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5f584f]">{text}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </MarketingShell>
   );

@@ -9,11 +9,13 @@ import { InputForm } from "@/app/components/InputForm";
 import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
+import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
+import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
-import type { GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
+import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 import { CrownIcon } from "../components/Icons";
 
 const starterStrategy: GeneratedStrategy = {
@@ -65,6 +67,11 @@ function DashboardPageInner() {
   const [activeView, setActiveView] = useState<"generate" | "saved">("generate");
   const [savedStrategies, setSavedStrategies] = useState<SavedStrategy[]>([]);
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
+  const [calendarTargetId, setCalendarTargetId] = useState<string | null>(null);
+  const [activeCalendar, setActiveCalendar] = useState<GeneratedCalendar | null>(null);
+  const [activeCalendarBrief, setActiveCalendarBrief] = useState<GeneratePayload | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
@@ -181,6 +188,57 @@ function DashboardPageInner() {
     const nextEntries = deleteSavedStrategy(id);
     setSavedStrategies(nextEntries);
     setExpandedSavedId((currentId) => (currentId === id ? null : currentId));
+    setCalendarTargetId((currentId) => (currentId === id ? null : currentId));
+    setActiveCalendar((currentCalendar) => (calendarTargetId === id ? null : currentCalendar));
+  }
+
+  async function handleOpenCalendar(item: SavedStrategy) {
+    if (item.calendar) {
+      setCalendarTargetId(item.id);
+      setActiveCalendarBrief(item.brief);
+      setActiveCalendar(item.calendar);
+      setIsCalendarOpen(true);
+      return;
+    }
+
+    if (plan !== "pro") {
+      router.push("/pricing");
+      return;
+    }
+
+    setCalendarTargetId(item.id);
+    setActiveCalendarBrief(item.brief);
+    setIsCalendarOpen(true);
+    setIsCalendarLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/generate-calendar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          brief: item.brief,
+          strategy: item.strategy,
+        }),
+      });
+
+      const data = (await response.json()) as GenerateCalendarResponse & { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error || "The AI calendar could not be generated right now.");
+      }
+
+      setActiveCalendar(data.calendar);
+      const nextEntries = saveGeneratedCalendar(item.id, data.calendar);
+      setSavedStrategies(nextEntries);
+    } catch (calendarError) {
+      setActiveCalendar(null);
+      setError(calendarError instanceof Error ? calendarError.message : "The AI calendar could not be generated right now.");
+    } finally {
+      setIsCalendarLoading(false);
+    }
   }
 
   const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left today`;
@@ -291,7 +349,7 @@ function DashboardPageInner() {
                   <div>
                     <h2 className="text-2xl font-semibold text-[#181614]">Your saved content briefs</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5f584f]">
-                      Open any saved brief to expand it into the full generated strategy card, including platform actions, a five-day plan, and video recommendations.
+                      Open any saved brief to expand it into the full generated strategy card, including platform actions, a five-day plan, video recommendations, and the Pro schedule builder for a 14-day calendar.
                     </p>
                   </div>
                   <button
@@ -341,6 +399,17 @@ function DashboardPageInner() {
                               <p className="editorial-label text-xs">Selected saved brief</p>
                             </div>
                             <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenCalendar(item)}
+                                className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                  plan === "pro"
+                                    ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
+                                    : "cursor-not-allowed border-[#ded6cc] bg-[#f3eee8] text-[#998f84]"
+                                }`}
+                              >
+                                {plan === "pro" ? "Schedule" : "Schedule Pro"}
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => setExpandedSavedId(item.id)}
@@ -404,12 +473,23 @@ function DashboardPageInner() {
               Start with one focused brief, save the versions you like most, then compare them side by side in Saved Content. Use the five-day plan as your posting checklist, and keep refining your prompts until the strategy sounds like something you would actually post this week.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5f584f]">
-              A good brief usually includes the kind of business you run, exactly who you want to reach, and the one result you care about most right now, like more sales, more bookings, or more profile visits.
+              A good brief usually includes the kind of business you run, exactly who you want to reach, and the one result you care about most right now, like more sales, more bookings, or more profile visits. When you move into Pro, those saved strategies can also turn into a styled 14-day calendar so you know what to post next without guessing.
             </p>
             </div>
           ) : null}
         </main>
       </div>
+
+      <ContentCalendarPanel
+        isOpen={isCalendarOpen}
+        onClose={() => {
+          setIsCalendarOpen(false);
+          setIsCalendarLoading(false);
+        }}
+        calendar={activeCalendar}
+        brief={activeCalendarBrief}
+        isLoading={isCalendarLoading}
+      />
     </div>
   );
 }

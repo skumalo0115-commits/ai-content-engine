@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { PlanConfig } from "@/app/lib/types";
 import { useAuth } from "./AuthProvider";
 import { CheckIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
+import { getStoredPlan, planChangeEventName, setStoredPlan } from "@/app/lib/usage";
 
 type PlanCardProps = {
   plan: PlanConfig;
@@ -13,6 +15,20 @@ type PlanCardProps = {
 
 export function PlanCard({ plan, featured = false }: PlanCardProps) {
   const { runAuthenticated } = useAuth();
+  const [currentPlan, setCurrentPlan] = useState<"free" | "pro">("free");
+
+  useEffect(() => {
+    const syncPlan = () => setCurrentPlan(getStoredPlan());
+    syncPlan();
+
+    window.addEventListener(planChangeEventName, syncPlan as EventListener);
+    window.addEventListener("storage", syncPlan);
+
+    return () => {
+      window.removeEventListener(planChangeEventName, syncPlan as EventListener);
+      window.removeEventListener("storage", syncPlan);
+    };
+  }, []);
 
   return (
     <motion.article
@@ -50,8 +66,28 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
           >
             <span className="relative z-[1]">{plan.ctaLabel}</span>
           </button>
+        ) : currentPlan === "pro" ? (
+          <div className="space-y-3">
+            <div className="rounded-[1.3rem] border border-[#cfdccd] bg-[#edf5f0] p-4 text-sm text-[#20584f]">
+              <p className="font-semibold">Subscription active</p>
+              <p className="mt-2 leading-6">Pro is active on this browser. Unlimited generations and the 14-day AI calendar are ready to use.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStoredPlan("free")}
+              className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-3 text-sm font-semibold text-[#7c5645] hover:bg-[#efd9d3]"
+            >
+              Cancel Subscription
+            </button>
+            <p className="text-xs leading-5 text-[#8c8378]">Cancellation stops future charges in the live billing flow. Previous successful payments are not refundable.</p>
+          </div>
         ) : (
-          <UpgradeButton label={plan.ctaLabel} className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
+          <UpgradeButton
+            label={plan.ctaLabel}
+            instantUnlock
+            redirectToPricing={false}
+            className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+          />
         )}
       </div>
     </motion.article>

@@ -1,24 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
+import { getStoredPlan, planChangeEventName, setStoredPlan } from "@/app/lib/usage";
 
 type UpgradeButtonProps = {
   label: string;
   className?: string;
   compact?: boolean;
+  instantUnlock?: boolean;
+  redirectToPricing?: boolean;
 };
 
-export function UpgradeButton({ label, className, compact = false }: UpgradeButtonProps) {
+export function UpgradeButton({ label, className, compact = false, instantUnlock = false, redirectToPricing = true }: UpgradeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<"free" | "pro">("free");
   const { runAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    const syncPlan = () => setPlan(getStoredPlan());
+    syncPlan();
+
+    window.addEventListener(planChangeEventName, syncPlan as EventListener);
+    window.addEventListener("storage", syncPlan);
+
+    return () => {
+      window.removeEventListener(planChangeEventName, syncPlan as EventListener);
+      window.removeEventListener("storage", syncPlan);
+    };
+  }, []);
 
   async function startCheckout() {
     setIsLoading(true);
     setError(null);
 
     try {
+      if (redirectToPricing) {
+        router.push("/pricing");
+        return;
+      }
+
+      if (instantUnlock) {
+        setStoredPlan("pro");
+        router.push("/dashboard?upgrade=instant");
+        return;
+      }
+
       const response = await fetch("/api/checkout", {
         method: "POST",
       });
@@ -34,6 +64,10 @@ export function UpgradeButton({ label, className, compact = false }: UpgradeButt
       setError(err instanceof Error ? err.message : "Checkout is not available yet.");
       setIsLoading(false);
     }
+  }
+
+  if (plan === "pro") {
+    return null;
   }
 
   return (

@@ -63,11 +63,12 @@ export const planConfigs: PlanConfig[] = [
     key: "pro",
     name: "Pro",
     priceLabel: `$${PRO_MONTHLY_PRICE_USD}/month`,
-    description: "For businesses that need unlimited generation, better campaign velocity, and premium positioning.",
+    description: "For businesses that need unlimited generation, AI scheduling, better campaign velocity, and premium positioning.",
     ctaLabel: "Upgrade to Pro",
     features: [
       "Unlimited generations",
       "Priority-quality output positioning",
+      "14-day AI content calendar from any saved strategy",
       "Launch beta access to saved content and exports",
       "Ideal for fast-moving content teams",
     ],
@@ -82,7 +83,7 @@ export const faqItems = [
   {
     question: "What does Pro unlock?",
     answer:
-      "Pro unlocks unlimited generation, premium positioning inside the dashboard, and first access to launch-beta features like saved content and exports.",
+      "Pro unlocks unlimited generation, premium positioning inside the dashboard, and advanced saved-content features like the 14-day AI schedule calendar.",
   },
   {
     question: "Can I use this for any kind of small business?",

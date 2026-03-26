@@ -5,6 +5,7 @@ import { FREE_DAILY_GENERATIONS } from "./site";
 
 const usageKey = "ace-free-usage-v1";
 const planKey = "ace-launch-plan-v1";
+export const planChangeEventName = "ace-plan-change";
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -85,4 +86,5 @@ export function setStoredPlan(plan: PlanKey) {
   }
 
   window.localStorage.setItem(planKey, plan);
+  window.dispatchEvent(new CustomEvent(planChangeEventName, { detail: plan }));
 }

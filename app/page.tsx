@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/app/components/AuthProvider";
 import { FloatingCard } from "@/app/components/FloatingCard";
 import { MarketingShell } from "@/app/components/MarketingShell";
@@ -8,6 +9,7 @@ import { PlanCard } from "@/app/components/PlanCard";
 import { Reveal } from "@/app/components/Reveal";
 import { SelfieHeroScene } from "@/app/components/SelfieHeroScene";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
+import { getStoredPlan, planChangeEventName } from "@/app/lib/usage";
 import { planConfigs, siteConfig } from "@/app/lib/site";
 import { ArrowUpRightIcon, BoltIcon, CalendarIcon, GaugeIcon, HashIcon, ShieldIcon, SparkIcon } from "./components/Icons";
 
@@ -50,6 +52,20 @@ const principleCards = [
 export default function HomePage() {
   const router = useRouter();
   const { user, runAuthenticated } = useAuth();
+  const [plan, setPlan] = useState<"free" | "pro">("free");
+
+  useEffect(() => {
+    const syncPlan = () => setPlan(getStoredPlan());
+    syncPlan();
+
+    window.addEventListener(planChangeEventName, syncPlan as EventListener);
+    window.addEventListener("storage", syncPlan);
+
+    return () => {
+      window.removeEventListener(planChangeEventName, syncPlan as EventListener);
+      window.removeEventListener("storage", syncPlan);
+    };
+  }, []);
 
   const openDashboard = () => {
     if (user) {
@@ -88,10 +104,12 @@ export default function HomePage() {
               <span className="relative z-[1] text-white">{user ? "Dashboard" : "Start Free"}</span>
               <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
             </button>
-            <UpgradeButton
-              label="Upgrade to Pro"
-              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
-            />
+            {plan !== "pro" ? (
+              <UpgradeButton
+                label="Upgrade to Pro"
+                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+              />
+            ) : null}
           </div>
 
           <div className="relative section-rule" />
@@ -216,7 +234,7 @@ export default function HomePage() {
             >
               <span className="relative z-[1]">{user ? "Open Dashboard" : "Try the New Free Plan"}</span>
             </button>
-            <UpgradeButton label="Go Pro for $29/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" />
+            {plan !== "pro" ? <UpgradeButton label="Go Pro for $29/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" /> : null}
           </div>
         </div>
       </Reveal>

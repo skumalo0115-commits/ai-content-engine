@@ -3,11 +3,12 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { primaryNavLinks, siteConfig } from "@/app/lib/site";
 import { useAuth } from "./AuthProvider";
 import { BrandLogoIcon, CrownIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
+import { getStoredPlan, planChangeEventName } from "@/app/lib/usage";
 
 type NavbarProps = {
   currentPlan?: string;
@@ -20,6 +21,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
   const router = useRouter();
   const { user, runAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [plan, setPlan] = useState<"free" | "pro">("free");
   const initials = useMemo(() => {
     if (!user) {
       return "";
@@ -30,6 +32,19 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
     return `${first}${last}`.toUpperCase() || user.email.slice(0, 2).toUpperCase();
   }, [user]);
   const navLinks = primaryNavLinks.filter((link) => !(pathname === "/" && link.href === "/"));
+
+  useEffect(() => {
+    const syncPlan = () => setPlan(getStoredPlan());
+    syncPlan();
+
+    window.addEventListener(planChangeEventName, syncPlan as EventListener);
+    window.addEventListener("storage", syncPlan);
+
+    return () => {
+      window.removeEventListener(planChangeEventName, syncPlan as EventListener);
+      window.removeEventListener("storage", syncPlan);
+    };
+  }, []);
 
   return (
     <motion.header
@@ -75,11 +90,13 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <span className="relative z-[1]">Start Free</span>
             </button>
           ) : null}
-          <UpgradeButton
-            compact
-            label="Upgrade"
-            className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
-          />
+          {plan !== "pro" ? (
+            <UpgradeButton
+              compact
+              label="Upgrade"
+              className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
+            />
+          ) : null}
           {user ? (
             <div className="relative">
               <button

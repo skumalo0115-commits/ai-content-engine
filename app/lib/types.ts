@@ -9,6 +9,7 @@ export type SavedStrategy = {
   createdAt: string;
   brief: GeneratePayload;
   strategy: GeneratedStrategy;
+  calendar?: GeneratedCalendar | null;
 };
 
 export type StrategyDayPlan = {
@@ -35,10 +36,34 @@ export type GeneratedStrategy = {
   videoRecommendations: VideoRecommendation[];
 };
 
+export type CalendarEntry = {
+  date: string;
+  dayLabel: string;
+  platform: string;
+  contentType: string;
+  task: string;
+  hook: string;
+  cta: string;
+};
+
+export type GeneratedCalendar = {
+  title: string;
+  summary: string;
+  entries: CalendarEntry[];
+};
+
 export type GenerateContentResponse = {
   source: "openrouter";
   strategy: GeneratedStrategy;
   remainingFreeGenerations?: number | null;
+  meta?: {
+    model?: string;
+  };
+};
+
+export type GenerateCalendarResponse = {
+  source: "openrouter";
+  calendar: GeneratedCalendar;
   meta?: {
     model?: string;
   };
