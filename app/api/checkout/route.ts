@@ -35,10 +35,11 @@ export async function POST() {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch {
+  } catch (error) {
+    console.error("Stripe checkout session creation failed:", error);
     return NextResponse.json(
       {
-        error: "Checkout could not be created right now. Please try again in a moment.",
+        error: error instanceof Error ? error.message : "Checkout could not be created right now. Please try again in a moment.",
       },
       { status: 500 },
     );
