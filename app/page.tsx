@@ -117,7 +117,7 @@ export default function HomePage() {
           <div className="relative grid gap-4 sm:grid-cols-3">
             {[
               { value: "5/day", label: "Free generations" },
-              { value: "$1", label: "Pro monthly plan" },
+              { value: "$10", label: "Pro monthly plan" },
               { value: "Live only", label: "Runs through OpenRouter with real output" },
             ].map((stat) => (
               <div key={stat.label} className="interactive-pop rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
@@ -234,7 +234,7 @@ export default function HomePage() {
             >
               <span className="relative z-[1]">{user ? "Open Dashboard" : "Try the New Free Plan"}</span>
             </button>
-            {plan !== "pro" ? <UpgradeButton label="Go Pro for $1/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" /> : null}
+            {plan !== "pro" ? <UpgradeButton label="Go Pro for $10/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" /> : null}
           </div>
         </div>
       </Reveal>

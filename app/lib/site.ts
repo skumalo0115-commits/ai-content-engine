@@ -1,7 +1,7 @@
 import type { ContactLink, PlanConfig } from "./types";
 
 export const FREE_DAILY_GENERATIONS = 5;
-export const PRO_MONTHLY_PRICE_USD = 1;
+export const PRO_MONTHLY_PRICE_USD = 10;
 export const DEFAULT_SITE_URL = "http://localhost:3000";
 export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 
