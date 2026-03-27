@@ -25,10 +25,10 @@ export default function PricingPage() {
       <section className="glass-panel rounded-[32px] p-8">
         <h2 className="text-2xl font-semibold text-[#181614]">What Pro unlocks right now</h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5f584f]">
-          For your current testing flow, clicking the Pro button unlocks Pro instantly on this browser so you can use the premium features right away, including the saved-content schedule builder and the 14-day AI calendar.
+          The Pro card now starts the real Stripe subscription checkout flow. Once the first payment is approved, Pro unlocks on this browser and the premium features start working immediately, including the saved-content schedule builder and the 14-day AI calendar.
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[#5f584f]">
-          Later, the instant unlock can be removed and the live Stripe checkout flow can take over again without changing the actual Pro feature set.
+          When a user cancels, future deductions stop and the website returns to the free experience on this browser. Previous successful payments are not refundable.
         </p>
       </section>
 

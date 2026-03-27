@@ -13,7 +13,7 @@ import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
-import { getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan } from "@/app/lib/usage";
+import { clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 import { CrownIcon } from "../components/Icons";
@@ -91,10 +91,22 @@ function DashboardPageInner() {
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
     try {
       const response = await fetch(`/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`);
-      const data = (await response.json()) as { active?: boolean };
+      const data = (await response.json()) as {
+        active?: boolean;
+        customerId?: string | null;
+        subscriptionId?: string | null;
+        status?: string | null;
+      };
 
       if (response.ok && data.active) {
         setStoredPlan("pro");
+        if (typeof data.customerId === "string" && typeof data.subscriptionId === "string" && typeof data.status === "string") {
+          setStoredSubscription({
+            customerId: data.customerId,
+            subscriptionId: data.subscriptionId,
+            status: data.status,
+          });
+        }
         syncClientState();
       }
     } finally {
@@ -123,6 +135,12 @@ function DashboardPageInner() {
 
     if (checkoutState === "success" && !sessionId) {
       setError(null);
+    }
+
+    if (checkoutState === "cancelled") {
+      clearStoredSubscription();
+      setStoredPlan("free");
+      syncClientState();
     }
   }, [searchParams]);
 

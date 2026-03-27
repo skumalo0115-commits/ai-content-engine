@@ -1,10 +1,11 @@
 "use client";
 
-import type { PlanKey, UsageLimitState } from "./types";
+import type { PlanKey, StoredSubscription, UsageLimitState } from "./types";
 import { FREE_DAILY_GENERATIONS } from "./site";
 
 const usageKey = "ace-free-usage-v1";
 const planKey = "ace-launch-plan-v1";
+const subscriptionKey = "ace-stripe-subscription-v1";
 export const planChangeEventName = "ace-plan-change";
 
 function getTodayKey() {
@@ -87,4 +88,46 @@ export function setStoredPlan(plan: PlanKey) {
 
   window.localStorage.setItem(planKey, plan);
   window.dispatchEvent(new CustomEvent(planChangeEventName, { detail: plan }));
+}
+
+export function getStoredSubscription(): StoredSubscription | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(subscriptionKey);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredSubscription>;
+    if (typeof parsed.customerId === "string" && typeof parsed.subscriptionId === "string" && typeof parsed.status === "string") {
+      return {
+        customerId: parsed.customerId,
+        subscriptionId: parsed.subscriptionId,
+        status: parsed.status,
+      };
+    }
+  } catch {
+    window.localStorage.removeItem(subscriptionKey);
+  }
+
+  return null;
+}
+
+export function setStoredSubscription(subscription: StoredSubscription) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(subscriptionKey, JSON.stringify(subscription));
+}
+
+export function clearStoredSubscription() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(subscriptionKey);
 }

@@ -16,11 +16,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    });
     const isActive =
       session.status === "complete" && (session.payment_status === "paid" || session.payment_status === "no_payment_required");
+    const subscription = typeof session.subscription === "object" && session.subscription ? session.subscription : null;
 
-    return NextResponse.json({ active: isActive });
+    return NextResponse.json({
+      active: isActive,
+      customerId: typeof session.customer === "string" ? session.customer : null,
+      subscriptionId: subscription?.id || (typeof session.subscription === "string" ? session.subscription : null),
+      status: subscription?.status || null,
+    });
   } catch {
     return NextResponse.json(
       {

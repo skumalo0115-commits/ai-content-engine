@@ -6,7 +6,7 @@ import type { PlanConfig } from "@/app/lib/types";
 import { useAuth } from "./AuthProvider";
 import { CheckIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
-import { getStoredPlan, planChangeEventName, setStoredPlan } from "@/app/lib/usage";
+import { clearStoredSubscription, getStoredPlan, getStoredSubscription, planChangeEventName, setStoredPlan } from "@/app/lib/usage";
 
 type PlanCardProps = {
   plan: PlanConfig;
@@ -16,6 +16,8 @@ type PlanCardProps = {
 export function PlanCard({ plan, featured = false }: PlanCardProps) {
   const { runAuthenticated } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<"free" | "pro">("free");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   useEffect(() => {
     const syncPlan = () => setCurrentPlan(getStoredPlan());
@@ -29,6 +31,44 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
       window.removeEventListener("storage", syncPlan);
     };
   }, []);
+
+  async function cancelSubscription() {
+    const subscription = getStoredSubscription();
+
+    if (!subscription?.subscriptionId) {
+      setStoredPlan("free");
+      clearStoredSubscription();
+      setCurrentPlan("free");
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch("/api/checkout/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ subscriptionId: subscription.subscriptionId }),
+      });
+
+      const data = (await response.json()) as { cancelled?: boolean; error?: string };
+
+      if (!response.ok || !data.cancelled) {
+        throw new Error(data.error || "The subscription could not be cancelled.");
+      }
+
+      clearStoredSubscription();
+      setStoredPlan("free");
+      setCurrentPlan("free");
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : "The subscription could not be cancelled.");
+    } finally {
+      setIsCancelling(false);
+    }
+  }
 
   return (
     <motion.article
@@ -74,17 +114,18 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
             </div>
             <button
               type="button"
-              onClick={() => setStoredPlan("free")}
+              onClick={() => void cancelSubscription()}
+              disabled={isCancelling}
               className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-3 text-sm font-semibold text-[#7c5645] hover:bg-[#efd9d3]"
             >
-              Cancel Subscription
+              {isCancelling ? "Cancelling..." : "Cancel Subscription"}
             </button>
             <p className="text-xs leading-5 text-[#8c8378]">Cancellation stops future charges in the live billing flow. Previous successful payments are not refundable.</p>
+            {cancelError ? <p className="text-xs text-[#8b5b4d]">{cancelError}</p> : null}
           </div>
         ) : (
           <UpgradeButton
             label={plan.ctaLabel}
-            instantUnlock
             redirectToPricing={false}
             className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
           />

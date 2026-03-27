@@ -85,6 +85,12 @@ export type UsageLimitState = {
   count: number;
 };
 
+export type StoredSubscription = {
+  customerId: string;
+  subscriptionId: string;
+  status: string;
+};
+
 export type ContactLink = {
   label: string;
   href: string;
