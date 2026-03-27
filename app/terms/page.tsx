@@ -16,7 +16,7 @@ export default function TermsPage() {
         </article>
         <article className="glass-panel rounded-[28px] p-6">
           <h2 className="text-xl font-semibold text-[#181614]">Free and Pro plans</h2>
-          <p className="mt-3 text-sm leading-7 text-[#5f584f]">The free plan includes five total generations on a signed-in account. Pro is offered at ${PRO_MONTHLY_PRICE_USD}/month in this launch configuration and removes that limit.</p>
+          <p className="mt-3 text-sm leading-7 text-[#5f584f]">The free plan includes three total generations on a signed-in account. Pro is offered at ${PRO_MONTHLY_PRICE_USD}/month in this launch configuration and removes that limit.</p>
         </article>
         <article className="glass-panel rounded-[28px] p-6">
           <h2 className="text-xl font-semibold text-[#181614]">Acceptable use</h2>

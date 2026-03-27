@@ -38,7 +38,7 @@ export function InputForm({
         <div>
           <p className="editorial-label text-xs">{currentPlan === "pro" ? "Pro plan active" : "Free plan active"}</p>
           <p className="mt-2 text-sm text-[#5f584f]">
-            {currentPlan === "pro" ? "Unlimited generations are active in this browser." : `${remainingFreeGenerations} of 5 free generations left on this account.`}
+            {currentPlan === "pro" ? "Unlimited generations are active in this browser." : `${remainingFreeGenerations} of 3 free generations left on this account.`}
           </p>
         </div>
         <p className="max-w-sm text-xs leading-5 text-[#7a7269]">Keep your brief specific and outcome-focused for the cleanest captions, hooks, and hashtags.</p>

@@ -1,6 +1,6 @@
 import type { ContactLink, PlanConfig } from "./types";
 
-export const FREE_DAILY_GENERATIONS = 5;
+export const FREE_DAILY_GENERATIONS = 3;
 export const PRO_MONTHLY_PRICE_USD = 10;
 export const DEFAULT_SITE_URL = "http://localhost:3000";
 export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
@@ -14,7 +14,7 @@ export const siteConfig = {
   heroSubtitle: "Generate viral social media content for your business instantly.",
   trustBadge: "Built for small businesses, creators, cafes, salons, agencies, and local service brands.",
   pricingBlurb:
-    "Start free with five total generations on your account, then upgrade to Pro when you need unlimited output and faster campaign momentum.",
+    "Start free with three total generations on your account, then upgrade to Pro when you need unlimited output and faster campaign momentum.",
   companyName: "AI Content Engine",
   email: "s.kumalo0115@gmail.com",
   phoneDisplay: "082 774 4933",

@@ -158,7 +158,7 @@ function DashboardPageInner() {
     setActiveView("generate");
 
     if (isLocked) {
-      setError("You have used all 5 free generations on this account. Upgrade to Pro for unlimited generations.");
+      setError("You have used all 3 free generations on this account. Upgrade to Pro for unlimited generations.");
       return;
     }
 
@@ -291,9 +291,9 @@ function DashboardPageInner() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-2">
                   <p className="editorial-label text-xs">Daily free cap reached</p>
-                  <h2 className="text-2xl font-semibold text-[#181614]">You used all 5 free generations on this account.</h2>
+                  <h2 className="text-2xl font-semibold text-[#181614]">You used all 3 free generations on this account.</h2>
                   <p className="max-w-2xl text-sm leading-6 text-[#5f584f]">
-                    Upgrade to Pro to remove the browser-based limit and keep generating captions, TikTok hooks, hashtags, and content plans without waiting for tomorrow&apos;s reset.
+                    Upgrade to Pro to remove the account limit and keep generating captions, TikTok hooks, hashtags, and content plans without interruption.
                   </p>
                 </div>
                 <UpgradeButton
