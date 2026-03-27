@@ -31,6 +31,7 @@ export async function POST() {
       cancel_url: `${siteUrl}/pricing?checkout=cancelled`,
       metadata: {
         source: "ai-content-engine-launch",
+        confirmationEmailSent: "false",
       },
     });
 
