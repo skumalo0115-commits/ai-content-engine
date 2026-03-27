@@ -28,7 +28,7 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
             exit={{ x: 260, opacity: 0.6, scale: 0.96 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
-            className="glass-panel max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[32px]"
+            className="glass-panel flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[32px]"
           >
             <div className="border-b border-black/8 bg-[#f6f2eb] px-6 py-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -66,19 +66,22 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
               </div>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto px-6 py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 pb-10">
               {isLoading ? (
                 <div className="rounded-[28px] border border-black/8 bg-white/85 p-10 text-center">
                   <p className="text-lg font-semibold text-[#181614]">Building your 14-day calendar...</p>
                   <p className="mt-2 text-sm text-[#5f584f]">The AI is mapping two weeks of daily actions directly from this saved strategy.</p>
                 </div>
               ) : calendar ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+                <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-4">
                   {calendar.entries.map((entry) => (
-                    <div key={entry.date} className="rounded-[24px] border border-black/8 bg-white/90 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-                      <p className="text-xs uppercase tracking-[0.22em] text-[#7a7269]">{entry.dayLabel}</p>
-                      <h3 className="mt-2 text-base font-semibold text-[#181614]">{entry.date}</h3>
-                      <div className="mt-4 space-y-3 text-sm text-[#4d463f]">
+                    <div
+                      key={entry.date}
+                      className="flex h-full min-h-[320px] flex-col rounded-[24px] border border-black/8 bg-white/92 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7269]">{entry.dayLabel}</p>
+                      <h3 className="mt-2 text-base font-semibold leading-6 text-[#181614]">{entry.date}</h3>
+                      <div className="mt-4 space-y-2.5 text-[13px] text-[#4d463f]">
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8c8378]">Platform</p>
                           <p className="mt-1 font-medium text-[#181614]">{entry.platform}</p>
@@ -89,15 +92,15 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8c8378]">Task</p>
-                          <p className="mt-1 leading-6">{entry.task}</p>
+                          <p className="mt-1 leading-5">{entry.task}</p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8c8378]">Hook</p>
-                          <p className="mt-1 leading-6">{entry.hook}</p>
+                          <p className="mt-1 leading-5">{entry.hook}</p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8c8378]">CTA</p>
-                          <p className="mt-1 leading-6">{entry.cta}</p>
+                          <p className="mt-1 leading-5">{entry.cta}</p>
                         </div>
                       </div>
                     </div>

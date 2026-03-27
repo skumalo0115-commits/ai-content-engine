@@ -14,7 +14,7 @@ export const siteConfig = {
   heroSubtitle: "Generate viral social media content for your business instantly.",
   trustBadge: "Built for small businesses, creators, cafes, salons, agencies, and local service brands.",
   pricingBlurb:
-    "Start free with five generations every day, then upgrade to Pro when you need unlimited output and faster campaign momentum.",
+    "Start free with five total generations on your account, then upgrade to Pro when you need unlimited output and faster campaign momentum.",
   companyName: "AI Content Engine",
   email: "s.kumalo0115@gmail.com",
   phoneDisplay: "082 774 4933",
@@ -50,10 +50,10 @@ export const planConfigs: PlanConfig[] = [
     key: "free",
     name: "Free",
     priceLabel: "$0",
-    description: `For testing ideas and validating your next post angle with ${FREE_DAILY_GENERATIONS} generations per day.`,
+    description: `For testing ideas and validating your next post angle with ${FREE_DAILY_GENERATIONS} total generations on your account.`,
     ctaLabel: "Start Free",
     features: [
-      `${FREE_DAILY_GENERATIONS} generations every day`,
+      `${FREE_DAILY_GENERATIONS} total generations on your account`,
       "Caption, TikTok idea, hashtag stack, and content mini-plan",
       "Launch-ready dashboard workflow",
       "Perfect for testing and first campaigns",
@@ -78,7 +78,7 @@ export const planConfigs: PlanConfig[] = [
 export const faqItems = [
   {
     question: "How does the free plan work?",
-    answer: `The free plan gives you ${FREE_DAILY_GENERATIONS} generations per day per browser. It resets daily and is great for testing content angles before you scale up.`,
+    answer: `The free plan gives you ${FREE_DAILY_GENERATIONS} total generations on your signed-in account. Once those are used, you can upgrade to Pro for unlimited access.`,
   },
   {
     question: "What does Pro unlock?",

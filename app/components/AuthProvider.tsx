@@ -12,6 +12,7 @@ import {
   type User as FirebaseUser,
 } from "firebase/auth";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
+import { setUsageAccountScope } from "@/app/lib/usage";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -215,6 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
+          setUsageAccountScope(nextFirebaseUser?.uid || null);
           setUser(nextFirebaseUser ? toAuthUser(nextFirebaseUser) : null);
           setIsAuthReady(true);
         });
@@ -298,6 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(firebaseAuth);
       }
     } finally {
+      setUsageAccountScope(null);
       setUser(null);
       router.push("/");
     }

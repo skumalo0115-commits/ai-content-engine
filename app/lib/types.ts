@@ -81,7 +81,6 @@ export type PlanConfig = {
 };
 
 export type UsageLimitState = {
-  dateKey: string;
   count: number;
 };
 

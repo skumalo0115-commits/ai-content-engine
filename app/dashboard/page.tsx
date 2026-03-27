@@ -16,7 +16,6 @@ import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
-import { CrownIcon } from "../components/Icons";
 
 const starterStrategy: GeneratedStrategy = {
   title: "Your content strategy will land here",
@@ -119,6 +118,12 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
+    if (isAuthReady) {
+      syncClientState();
+    }
+  }, [isAuthReady, user?.uid]);
+
+  useEffect(() => {
     if (isAuthReady && !user) {
       openAuthModal({ mode: "signup", redirectTo: "/dashboard", closeRedirectTo: "/" });
     }
@@ -153,7 +158,7 @@ function DashboardPageInner() {
     setActiveView("generate");
 
     if (isLocked) {
-      setError("You have reached today's free limit on this browser. Upgrade to Pro for unlimited generations.");
+      setError("You have used all 5 free generations on this account. Upgrade to Pro for unlimited generations.");
       return;
     }
 
@@ -211,16 +216,17 @@ function DashboardPageInner() {
   }
 
   async function handleOpenCalendar(item: SavedStrategy) {
+    if (plan !== "pro") {
+      setError("Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.");
+      setIsCalendarOpen(false);
+      return;
+    }
+
     if (item.calendar) {
       setCalendarTargetId(item.id);
       setActiveCalendarBrief(item.brief);
       setActiveCalendar(item.calendar);
       setIsCalendarOpen(true);
-      return;
-    }
-
-    if (plan !== "pro") {
-      router.push("/pricing");
       return;
     }
 
@@ -259,7 +265,7 @@ function DashboardPageInner() {
     }
   }
 
-  const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left today`;
+  const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
 
   return (
     <div className="relative min-h-screen text-[#181614]">
@@ -285,7 +291,7 @@ function DashboardPageInner() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="space-y-2">
                   <p className="editorial-label text-xs">Daily free cap reached</p>
-                  <h2 className="text-2xl font-semibold text-[#181614]">You used all 5 free generations for today.</h2>
+                  <h2 className="text-2xl font-semibold text-[#181614]">You used all 5 free generations on this account.</h2>
                   <p className="max-w-2xl text-sm leading-6 text-[#5f584f]">
                     Upgrade to Pro to remove the browser-based limit and keep generating captions, TikTok hooks, hashtags, and content plans without waiting for tomorrow&apos;s reset.
                   </p>
@@ -298,7 +304,7 @@ function DashboardPageInner() {
             </div>
           ) : null}
 
-          {activeView === "generate" && error ? (
+          {error ? (
             <div className="rounded-2xl border border-black/6 bg-[#f8ebe6] p-4 text-sm text-[#7c5645]">
               <span className="font-semibold">Error:</span> {error}
             </div>
@@ -352,6 +358,7 @@ function DashboardPageInner() {
                   strategy={isLocked ? lockedPreviewStrategy : strategy}
                   eyebrow={isLocked ? "Pro preview" : sourceLabel}
                   isLocked={isLocked}
+                  showDetailSections={strategy.title !== starterStrategy.title && strategy.title !== lockedPreviewStrategy.title}
                   showSaveButton={canSaveCurrentStrategy}
                   onSave={handleSaveStrategy}
                   saveLabel={currentStrategyAlreadySaved ? "Already saved" : "Save to Saved Content"}
@@ -423,7 +430,7 @@ function DashboardPageInner() {
                                 className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                                   plan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
-                                    : "cursor-not-allowed border-[#ded6cc] bg-[#f3eee8] text-[#998f84]"
+                                    : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
                                 }`}
                               >
                                 {plan === "pro" ? "Schedule" : "Schedule Pro"}
@@ -480,12 +487,6 @@ function DashboardPageInner() {
                 <p className="editorial-label text-xs">How to use this workspace well</p>
                 <h2 className="mt-2 text-2xl font-semibold text-[#181614]">Generate a clear plan, save the best ones, and reuse what starts working.</h2>
               </div>
-              {plan === "pro" ? (
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#e6efeb] px-4 py-2 text-sm text-[#20584f]">
-                  <CrownIcon className="h-4 w-4" />
-                  Pro active here
-                </div>
-              ) : null}
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-[#5f584f]">
               Start with one focused brief, save the versions you like most, then compare them side by side in Saved Content. Use the five-day plan as your posting checklist, and keep refining your prompts until the strategy sounds like something you would actually post this week.

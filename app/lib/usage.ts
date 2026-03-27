@@ -3,19 +3,45 @@
 import type { PlanKey, StoredSubscription, UsageLimitState } from "./types";
 import { FREE_DAILY_GENERATIONS } from "./site";
 
-const usageKey = "ace-free-usage-v1";
+const usageKey = "ace-free-usage-v2";
 const planKey = "ace-launch-plan-v1";
 const subscriptionKey = "ace-stripe-subscription-v1";
+const usageScopeKey = "ace-auth-usage-scope-v1";
 export const planChangeEventName = "ace-plan-change";
 
-function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+function getUsageScope() {
+  if (typeof window === "undefined") {
+    return "guest";
+  }
+
+  return window.localStorage.getItem(usageScopeKey) || "guest";
+}
+
+function getUsageStorageKey() {
+  return `${usageKey}:${getUsageScope()}`;
+}
+
+function getLegacyUsageCount() {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  const legacyRaw = window.localStorage.getItem("ace-free-usage-v1");
+  if (!legacyRaw) {
+    return 0;
+  }
+
+  try {
+    const parsed = JSON.parse(legacyRaw) as Partial<{ count: number }>;
+    return Number.isFinite(parsed.count) ? Math.max(0, Number(parsed.count)) : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function getFreshUsageState(): UsageLimitState {
   return {
-    dateKey: getTodayKey(),
-    count: 0,
+    count: getLegacyUsageCount(),
   };
 }
 
@@ -24,32 +50,25 @@ export function getUsageState(): UsageLimitState {
     return getFreshUsageState();
   }
 
-  const raw = window.localStorage.getItem(usageKey);
+  const raw = window.localStorage.getItem(getUsageStorageKey());
 
   if (!raw) {
     const fresh = getFreshUsageState();
-    window.localStorage.setItem(usageKey, JSON.stringify(fresh));
+    window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(fresh));
     return fresh;
   }
 
   try {
     const parsed = JSON.parse(raw) as Partial<UsageLimitState>;
-    if (parsed.dateKey !== getTodayKey()) {
-      const fresh = getFreshUsageState();
-      window.localStorage.setItem(usageKey, JSON.stringify(fresh));
-      return fresh;
-    }
-
     const nextState: UsageLimitState = {
-      dateKey: parsed.dateKey || getTodayKey(),
       count: Number.isFinite(parsed.count) ? Math.max(0, Number(parsed.count)) : 0,
     };
 
-    window.localStorage.setItem(usageKey, JSON.stringify(nextState));
+    window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(nextState));
     return nextState;
   } catch {
     const fresh = getFreshUsageState();
-    window.localStorage.setItem(usageKey, JSON.stringify(fresh));
+    window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(fresh));
     return fresh;
   }
 }
@@ -67,10 +86,22 @@ export function incrementFreeGeneration() {
   };
 
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(usageKey, JSON.stringify(nextState));
+    window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(nextState));
   }
 
   return Math.max(0, FREE_DAILY_GENERATIONS - nextState.count);
+}
+
+export function setUsageAccountScope(uid: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (uid) {
+    window.localStorage.setItem(usageScopeKey, uid);
+  } else {
+    window.localStorage.removeItem(usageScopeKey);
+  }
 }
 
 export function getStoredPlan(): PlanKey {

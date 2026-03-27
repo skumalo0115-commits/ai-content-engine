@@ -31,7 +31,7 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
         <p className="editorial-label text-xs">Launch Plan</p>
         <p className="mt-2 text-xl font-semibold text-[#181614]">{currentPlan}</p>
         <p className="mt-2 text-sm leading-6 text-[#5f584f]">
-          {currentPlan === "Pro" ? "Unlimited generations unlocked on this browser." : `${remainingFreeGenerations} free generations left today on this browser.`}
+          {currentPlan === "Pro" ? "Unlimited generations unlocked on this browser." : `${remainingFreeGenerations} free generations left on this account.`}
         </p>
       </div>
 
@@ -84,9 +84,9 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
       <div className="mt-5 rounded-[1.5rem] border border-black/6 bg-white p-4 text-sm text-[#5f584f]">
         <div className="flex items-center gap-2 text-[#181614]">
           <LockIcon className="h-4 w-4 text-[#20584f]" />
-          Soft launch gating
+          Free-plan access
         </div>
-        <p className="mt-2 leading-6">Free limits are still stored in browser storage. Account sync comes later.</p>
+        <p className="mt-2 leading-6">Your free generations now count down on this signed-in account. Upgrade whenever you want unlimited content and the Pro calendar tools.</p>
       </div>
     </motion.aside>
   );

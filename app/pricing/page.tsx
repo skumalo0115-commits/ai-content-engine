@@ -12,7 +12,7 @@ export default function PricingPage() {
       <div className="pointer-events-none fixed inset-0 -z-[8] bg-[rgba(244,240,232,0.84)]" />
       <section className="space-y-6 pt-8">
         <p className="editorial-label text-xs">Pricing</p>
-        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Start free, move into Pro when the daily cap stops being enough.</h1>
+        <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Start free, move into Pro when your free account limit stops being enough.</h1>
         <p className="max-w-3xl text-base leading-7 text-[#5f584f]">{siteConfig.pricingBlurb}</p>
       </section>
 

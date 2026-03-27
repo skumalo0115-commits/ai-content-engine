@@ -11,9 +11,17 @@ type UpgradeButtonProps = {
   compact?: boolean;
   instantUnlock?: boolean;
   redirectToPricing?: boolean;
+  requireAuth?: boolean;
 };
 
-export function UpgradeButton({ label, className, compact = false, instantUnlock = false, redirectToPricing = true }: UpgradeButtonProps) {
+export function UpgradeButton({
+  label,
+  className,
+  compact = false,
+  instantUnlock = false,
+  redirectToPricing = true,
+  requireAuth = true,
+}: UpgradeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<"free" | "pro">("free");
@@ -74,7 +82,14 @@ export function UpgradeButton({ label, className, compact = false, instantUnlock
     <div className={compact ? undefined : "space-y-2"}>
       <button
         type="button"
-        onClick={() => runAuthenticated({ onSuccess: () => void startCheckout(), mode: "signup" })}
+        onClick={() => {
+          if (requireAuth) {
+            runAuthenticated({ onSuccess: () => void startCheckout(), mode: "signup" });
+            return;
+          }
+
+          void startCheckout();
+        }}
         disabled={isLoading}
         className={className}
       >

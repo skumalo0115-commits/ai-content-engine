@@ -70,6 +70,11 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
     }
   }
 
+  function enableTestProAccess() {
+    setStoredPlan("pro");
+    setCurrentPlan("pro");
+  }
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 24 }}
@@ -99,13 +104,24 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         </div>
 
         {plan.key === "free" ? (
-          <button
-            type="button"
-            onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
-            className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
-          >
-            <span className="relative z-[1]">{plan.ctaLabel}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
+              className="interactive-pop inline-flex flex-1 items-center justify-center rounded-2xl border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+            >
+              <span className="relative z-[1]">{plan.ctaLabel}</span>
+            </button>
+            {currentPlan !== "pro" ? (
+              <button
+                type="button"
+                onClick={enableTestProAccess}
+                className="interactive-pop inline-flex items-center justify-center rounded-2xl border border-[#20584f]/14 bg-[#e6efeb] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#20584f] hover:bg-[#dce9e4]"
+              >
+                Test Pro
+              </button>
+            ) : null}
+          </div>
         ) : currentPlan === "pro" ? (
           <div className="space-y-3">
             <div className="rounded-[1.3rem] border border-[#cfdccd] bg-[#edf5f0] p-4 text-sm text-[#20584f]">
@@ -127,6 +143,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
           <UpgradeButton
             label={plan.ctaLabel}
             redirectToPricing={false}
+            requireAuth={false}
             className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
           />
         )}

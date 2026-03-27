@@ -10,6 +10,7 @@ type GeneratedStrategyCardProps = {
   strategy: GeneratedStrategy;
   eyebrow?: string;
   isLocked?: boolean;
+  showDetailSections?: boolean;
   showSaveButton?: boolean;
   onSave?: () => void;
   saveLabel?: string;
@@ -61,6 +62,7 @@ export function GeneratedStrategyCard({
   strategy,
   eyebrow,
   isLocked = false,
+  showDetailSections = true,
   showSaveButton = false,
   onSave,
   saveLabel = "Save",
@@ -135,42 +137,46 @@ export function GeneratedStrategyCard({
             </div>
           </div>
 
-          <div className="space-y-4 border-b border-white/10 py-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/48">Next 5 Days</p>
-            <div className="grid gap-4 lg:grid-cols-5">
-              {strategy.fiveDayPlan.map((item) => (
-                <div key={`${item.day}-${item.platform}`} className="rounded-[22px] bg-white/[0.04] p-4">
-                  <p className="text-sm font-semibold text-white">{item.day}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-[0.22em] text-white/45">{item.platform}</p>
-                  <TypedText key={`${item.day}-${item.action}`} text={item.action} className="mt-3 text-sm leading-6 text-white/78" />
+          {showDetailSections ? (
+            <>
+              <div className="space-y-4 border-b border-white/10 py-6">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/48">Next 5 Days</p>
+                <div className="grid gap-4 lg:grid-cols-5">
+                  {strategy.fiveDayPlan.map((item) => (
+                    <div key={`${item.day}-${item.platform}`} className="rounded-[22px] bg-white/[0.04] p-4">
+                      <p className="text-sm font-semibold text-white">{item.day}</p>
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.22em] text-white/45">{item.platform}</p>
+                      <TypedText key={`${item.day}-${item.action}`} text={item.action} className="mt-3 text-sm leading-6 text-white/78" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="space-y-4 pt-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/48">Watch These Next</p>
-            <div className="flex flex-col gap-3">
-              {strategy.videoRecommendations.map((video) => (
-                <button
-                  key={video.url}
-                  type="button"
-                  onClick={() => openVideo(video)}
-                  className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm text-white transition hover:bg-white/[0.08]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-white">{video.title}</p>
-                    {video.channel ? <p className="mt-1 text-xs text-white/45">{video.channel}</p> : null}
-                  </div>
-                  {video.thumbnailUrl ? (
-                    <span className="relative h-9 w-14 shrink-0 overflow-hidden rounded-md border border-white/10">
-                      <Image src={video.thumbnailUrl} alt={video.title} fill sizes="56px" className="object-cover" />
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </div>
+              <div className="space-y-4 pt-6">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/48">Watch These Next</p>
+                <div className="flex flex-col gap-3">
+                  {strategy.videoRecommendations.map((video) => (
+                    <button
+                      key={video.url}
+                      type="button"
+                      onClick={() => openVideo(video)}
+                      className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm text-white transition hover:bg-white/[0.08]"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{video.title}</p>
+                        {video.channel ? <p className="mt-1 text-xs text-white/45">{video.channel}</p> : null}
+                      </div>
+                      {video.thumbnailUrl ? (
+                        <span className="relative h-9 w-14 shrink-0 overflow-hidden rounded-md border border-white/10">
+                          <Image src={video.thumbnailUrl} alt={video.title} fill sizes="56px" className="object-cover" />
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
 
         {isLocked ? (
