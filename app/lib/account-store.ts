@@ -170,3 +170,21 @@ export async function setAccountPlan(uid: string, plan: PlanKey) {
 
   await setDoc(ref, buildPatch({ plan }), { merge: true });
 }
+
+export async function deactivateAccountSubscription(uid: string, profile: AccountProfile) {
+  const ref = getAccountDoc(uid);
+
+  if (!ref) {
+    return;
+  }
+
+  await setDoc(
+    ref,
+    buildPatch({
+      plan: "free",
+      profile,
+      subscription: null,
+    }),
+    { merge: true },
+  );
+}

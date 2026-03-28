@@ -11,10 +11,10 @@ import {
   updateProfile as updateFirebaseProfile,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
+import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
-import { clearStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
+import { clearStoredSubscription, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -140,7 +140,7 @@ function toAccountProfile(user: AuthUser): AccountProfile {
   return {
     firstName: user.firstName,
     lastName: user.lastName,
-    email: user.email,
+    email: user.email.trim().toLowerCase(),
     company: user.company,
     role: user.role,
   };
@@ -194,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [form, setForm] = useState(() => getInitialForm("signup"));
   const [showPassword, setShowPassword] = useState(false);
   const pendingRequestRef = useRef<AuthRequest | null>(null);
+  const subscriptionSyncRef = useRef<string | null>(null);
 
   const navigateTo = useCallback(
     (path: string) => {
@@ -201,6 +202,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     [router],
   );
+
+  const syncSubscriptionStatus = useCallback(async (nextUser: AuthUser, profile: AccountProfile) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentSubscription = getStoredSubscription();
+    const customerId = currentSubscription?.customerId;
+
+    if (!customerId) {
+      subscriptionSyncRef.current = null;
+      return;
+    }
+
+    const syncKey = `${nextUser.uid}:${customerId}:${currentSubscription.status}`;
+
+    if (subscriptionSyncRef.current === syncKey) {
+      return;
+    }
+
+    subscriptionSyncRef.current = syncKey;
+
+    try {
+      const response = await fetch(`/api/checkout/subscription?customerId=${encodeURIComponent(customerId)}`, {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as {
+        active?: boolean;
+        status?: string | null;
+        customerId?: string | null;
+        customerCode?: string | null;
+        subscriptionCode?: string | null;
+      };
+
+      if (!response.ok) {
+        return;
+      }
+
+      if (!data.active) {
+        clearStoredSubscription();
+        setStoredPlan("free");
+        subscriptionSyncRef.current = null;
+        await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
+        return;
+      }
+
+      if (typeof data.status !== "string" || typeof data.customerId !== "string") {
+        return;
+      }
+
+      const nextSubscription = {
+        provider: "paystack" as const,
+        customerId: data.customerId,
+        customerCode: typeof data.customerCode === "string" ? data.customerCode : currentSubscription?.customerCode,
+        subscriptionCode: typeof data.subscriptionCode === "string" ? data.subscriptionCode : currentSubscription?.subscriptionCode,
+        email: currentSubscription?.email || nextUser.email,
+        reference: currentSubscription?.reference,
+        status: data.status,
+      };
+
+      setStoredPlan("pro");
+      setStoredSubscription(nextSubscription);
+
+      if (
+        currentSubscription?.status !== nextSubscription.status ||
+        currentSubscription.subscriptionCode !== nextSubscription.subscriptionCode ||
+        currentSubscription.customerCode !== nextSubscription.customerCode
+      ) {
+        await activateAccountSubscription(nextUser.uid, { profile, subscription: nextSubscription }).catch(() => undefined);
+      }
+    } catch {
+      // Keep the last known local/account state if Paystack status sync temporarily fails.
+    }
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -230,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!nextFirebaseUser) {
             clearStoredSubscription();
             setStoredPlan("free");
+            subscriptionSyncRef.current = null;
             setUser(null);
             setIsAuthReady(true);
             return;
@@ -256,13 +332,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: record.profile.role,
             };
 
+            const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
+
             setStoredPlan(record.plan);
             if (record.subscription) {
               setStoredSubscription(record.subscription);
+              void syncSubscriptionStatus(nextUserWithProfile, record.profile);
             } else {
+              subscriptionSyncRef.current = null;
               clearStoredSubscription();
             }
-            setUser(toAuthUser(nextFirebaseUser, nextOverride));
+            setUser(nextUserWithProfile);
           });
 
           setIsAuthReady(true);
@@ -274,7 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
       unsubscribeAccount();
     };
-  }, []);
+  }, [syncSubscriptionStatus]);
 
   const closeModal = useCallback(() => {
     const closeRedirectTo = pendingRequestRef.current?.closeRedirectTo;
