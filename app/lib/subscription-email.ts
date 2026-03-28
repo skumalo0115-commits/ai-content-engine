@@ -1,4 +1,3 @@
-import type Stripe from "stripe";
 import { getBaseUrl, PRO_MONTHLY_PRICE_USD, siteConfig } from "@/app/lib/site";
 import { sendTransactionalEmail } from "@/app/lib/mailer";
 
@@ -6,48 +5,23 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function getCustomerEmail(session: Stripe.Checkout.Session) {
-  if (session.customer_details?.email) {
-    return session.customer_details.email;
-  }
-
-  if (typeof session.customer_email === "string" && session.customer_email.trim()) {
-    return session.customer_email.trim();
-  }
-
-  return "";
-}
-
-function getCustomerName(session: Stripe.Checkout.Session) {
-  if (session.customer_details?.name) {
-    return session.customer_details.name;
-  }
-
-  return "there";
-}
-
-function hasConfirmationEmailBeenSent(session: Stripe.Checkout.Session) {
-  return session.metadata?.confirmationEmailSent === "true";
-}
-
-export async function sendProSubscriptionConfirmationEmail(stripe: Stripe, session: Stripe.Checkout.Session) {
-  if (hasConfirmationEmailBeenSent(session)) {
-    return { sent: false, reason: "already_sent" } as const;
-  }
-
-  const email = getCustomerEmail(session);
+export async function sendProSubscriptionConfirmationEmail(input: {
+  email: string;
+  customerName?: string;
+}) {
+  const email = input.email.trim();
   if (!email) {
-    return { sent: false, reason: "missing_email" } as const;
+    return;
   }
 
-  const customerName = getCustomerName(session);
+  const customerName = input.customerName?.trim() || "there";
   const dashboardUrl = `${getBaseUrl()}/dashboard`;
   const pricingUrl = `${getBaseUrl()}/pricing`;
   const subject = `Your ${siteConfig.name} Pro subscription is active`;
   const text = [
     `Hi ${customerName},`,
     "",
-    `Your ${siteConfig.name} Pro subscription is now active at $${PRO_MONTHLY_PRICE_USD}/month.`,
+    `Your ${siteConfig.name} Pro subscription is now active at $${PRO_MONTHLY_PRICE_USD}/month through Paystack.`,
     "",
     "You can now use:",
     "- unlimited content generations",
@@ -67,7 +41,7 @@ export async function sendProSubscriptionConfirmationEmail(stripe: Stripe, sessi
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:24px;padding:32px;border:1px solid rgba(0,0,0,0.06);">
         <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6f685f;">${escapeHtml(siteConfig.name)} Pro</p>
         <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#181614;">Your Pro subscription is active</h1>
-        <p style="margin:0 0 16px;font-size:16px;color:#433d36;">Hi ${escapeHtml(customerName)}, your Pro plan is now active at <strong>$${PRO_MONTHLY_PRICE_USD}/month</strong>.</p>
+        <p style="margin:0 0 16px;font-size:16px;color:#433d36;">Hi ${escapeHtml(customerName)}, your Pro plan is now active at <strong>$${PRO_MONTHLY_PRICE_USD}/month</strong> through Paystack.</p>
         <div style="margin:24px 0;padding:20px;border-radius:18px;background:#f8fbfa;border:1px solid rgba(32,88,79,0.12);">
           <p style="margin:0 0 10px;font-weight:700;color:#20584f;">You now have access to:</p>
           <ul style="margin:0;padding-left:20px;color:#433d36;">
@@ -93,17 +67,4 @@ export async function sendProSubscriptionConfirmationEmail(stripe: Stripe, sessi
     html,
     replyTo: siteConfig.email,
   });
-
-  try {
-    await stripe.checkout.sessions.update(session.id, {
-      metadata: {
-        ...session.metadata,
-        confirmationEmailSent: "true",
-      },
-    });
-  } catch (updateError) {
-    console.error("Stripe checkout session metadata update failed:", updateError);
-  }
-
-  return { sent: true } as const;
 }

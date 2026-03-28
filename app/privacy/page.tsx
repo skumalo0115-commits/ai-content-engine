@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         </article>
         <article className="glass-panel rounded-[28px] p-6">
           <h2 className="text-xl font-semibold text-[#181614]">Payments</h2>
-          <p className="mt-3 text-sm leading-7 text-[#5f584f]">Payments are handled by Stripe. We do not store your full card details on this site. Stripe may collect billing information as part of checkout and subscription management.</p>
+          <p className="mt-3 text-sm leading-7 text-[#5f584f]">Payments are handled by Paystack. We do not store your full card details on this site. Paystack may collect billing information as part of checkout and subscription management.</p>
         </article>
         <article className="glass-panel rounded-[28px] p-6">
           <h2 className="text-xl font-semibold text-[#181614]">AI providers</h2>

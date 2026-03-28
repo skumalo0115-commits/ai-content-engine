@@ -85,8 +85,12 @@ export type UsageLimitState = {
 };
 
 export type StoredSubscription = {
+  provider: "paystack";
   customerId: string;
-  subscriptionId: string;
+  customerCode?: string;
+  subscriptionCode?: string;
+  email?: string;
+  reference?: string;
   status: string;
 };
 

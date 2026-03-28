@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
-import { getStoredPlan, planChangeEventName, setStoredPlan } from "@/app/lib/usage";
+import { getStoredPlan, planChangeEventName } from "@/app/lib/usage";
 
 type UpgradeButtonProps = {
   label: string;
@@ -25,7 +25,7 @@ export function UpgradeButton({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<"free" | "pro">("free");
-  const { runAuthenticated } = useAuth();
+  const { runAuthenticated, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -52,13 +52,25 @@ export function UpgradeButton({
       }
 
       if (instantUnlock) {
-        setStoredPlan("pro");
         router.push("/dashboard?upgrade=instant");
         return;
       }
 
+      if (!user?.email) {
+        throw new Error("Please sign in with a valid email address before starting Paystack checkout.");
+      }
+
       const response = await fetch("/api/checkout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          uid: user.uid,
+        }),
       });
 
       const data = (await response.json()) as { url?: string; error?: string };

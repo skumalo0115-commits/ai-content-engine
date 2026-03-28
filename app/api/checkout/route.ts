@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/app/lib/site";
-import { getStripeServer } from "@/app/lib/stripe";
+import { initializePaystackCheckout, isPaystackConfigured } from "@/app/lib/paystack";
 
-export async function POST() {
-  const stripe = getStripeServer();
-  const priceId = process.env.STRIPE_PRO_PRICE_ID;
+export const runtime = "nodejs";
 
-  if (!stripe || !priceId) {
+function cleanValue(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+export async function POST(request: Request) {
+  if (!isPaystackConfigured()) {
     return NextResponse.json(
       {
-        error: "Stripe checkout is not configured yet. Add your Stripe keys and price ID to enable Pro upgrades.",
+        error: "Paystack checkout is not configured yet. Add PAYSTACK_SECRET_KEY and PAYSTACK_PLAN_CODE to enable Pro upgrades.",
       },
       { status: 503 },
     );
@@ -17,27 +24,37 @@ export async function POST() {
 
   try {
     const siteUrl = getBaseUrl();
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      billing_address_collection: "auto",
-      allow_promotion_codes: true,
-      success_url: `${siteUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/pricing?checkout=cancelled`,
+    const payload = (await request.json().catch(() => ({}))) as {
+      email?: unknown;
+      firstName?: unknown;
+      lastName?: unknown;
+      uid?: unknown;
+    };
+    const email = cleanValue(payload.email);
+    const firstName = cleanValue(payload.firstName);
+    const lastName = cleanValue(payload.lastName);
+    const uid = cleanValue(payload.uid);
+
+    if (!email || !isValidEmail(email)) {
+      return NextResponse.json({ error: "A valid account email is required before starting Paystack checkout." }, { status: 400 });
+    }
+
+    const reference = `ace_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    const session = await initializePaystackCheckout({
+      email,
+      callbackUrl: `${siteUrl}/dashboard?checkout=success`,
+      reference,
       metadata: {
         source: "ai-content-engine-launch",
-        confirmationEmailSent: "false",
+        uid,
+        firstName,
+        lastName,
       },
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.authorization_url, reference: session.reference });
   } catch (error) {
-    console.error("Stripe checkout session creation failed:", error);
+    console.error("Paystack checkout initialization failed:", error);
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Checkout could not be created right now. Please try again in a moment.",

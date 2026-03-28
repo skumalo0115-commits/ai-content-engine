@@ -20,7 +20,7 @@ export default function ContactPage() {
         <p className="editorial-label text-xs">Contact</p>
         <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-[#181614]">Reach out for launch questions, partnerships, or Pro support.</h1>
         <p className="max-w-3xl text-base leading-7 text-[#5f584f]">
-          This first release is intentionally lean. If you need help configuring Stripe, OpenRouter, or your launch setup, the fastest contact path is WhatsApp or email.
+          This first release is intentionally lean. If you need help configuring Paystack, OpenRouter, or your launch setup, the fastest contact path is WhatsApp or email.
         </p>
       </section>
 

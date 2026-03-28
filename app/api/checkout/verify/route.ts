@@ -1,55 +1,57 @@
 import { NextResponse } from "next/server";
-import { getStripeServer } from "@/app/lib/stripe";
+import { getPaystackPlanCode, isPaystackConfigured, verifyPaystackTransaction } from "@/app/lib/paystack";
 import { sendProSubscriptionConfirmationEmail } from "@/app/lib/subscription-email";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const stripe = getStripeServer();
-
-  if (!stripe) {
+  if (!isPaystackConfigured()) {
     return NextResponse.json({ active: false }, { status: 503 });
   }
 
   const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("session_id");
+  const reference = searchParams.get("reference");
 
-  if (!sessionId) {
-    return NextResponse.json({ active: false, error: "Missing session id." }, { status: 400 });
+  if (!reference) {
+    return NextResponse.json({ active: false, error: "Missing transaction reference." }, { status: 400 });
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription"],
-    });
-    const subscription = typeof session.subscription === "object" && session.subscription ? session.subscription : null;
-    const isSubscriptionActive = subscription ? ["active", "trialing"].includes(subscription.status) : false;
-    const isActive =
-      session.status === "complete" &&
-      (session.payment_status === "paid" || session.payment_status === "no_payment_required") &&
-      isSubscriptionActive;
+    const transaction = await verifyPaystackTransaction(reference);
+    const expectedPlanCode = getPaystackPlanCode();
+    const customerId = transaction.customer?.id;
+    const customerCode = transaction.customer?.customer_code;
+    const email = transaction.customer?.email;
+    const customerName = [transaction.customer?.first_name, transaction.customer?.last_name].filter(Boolean).join(" ").trim();
+    const matchedPlanCode = transaction.plan_object?.plan_code || transaction.plan || "";
+    const isActive = transaction.status === "success" && Boolean(transaction.paid_at) && matchedPlanCode === expectedPlanCode;
 
-    if (isActive) {
+    if (isActive && email) {
       try {
-        await sendProSubscriptionConfirmationEmail(stripe, session);
+        await sendProSubscriptionConfirmationEmail({
+          email,
+          customerName,
+        });
       } catch (emailError) {
-        console.error("Pro confirmation email failed during checkout verification:", emailError);
+        console.error("Pro confirmation email failed during Paystack verification:", emailError);
       }
     }
 
     return NextResponse.json({
       active: isActive,
-      customerId: typeof session.customer === "string" ? session.customer : null,
-      subscriptionId: subscription?.id || (typeof session.subscription === "string" ? session.subscription : null),
-      status: subscription?.status || null,
-      customerEmail: session.customer_details?.email || session.customer_email || null,
+      customerId: customerId ? String(customerId) : null,
+      customerCode: customerCode || null,
+      subscriptionCode: null,
+      status: transaction.status || null,
+      customerEmail: email || null,
+      reference: transaction.reference || reference,
     });
   } catch (error) {
-    console.error("Stripe checkout verification failed:", error);
+    console.error("Paystack checkout verification failed:", error);
     return NextResponse.json(
       {
         active: false,
-        error: "We could not verify your checkout session yet.",
+        error: "We could not verify your Paystack transaction yet.",
       },
       { status: 400 },
     );

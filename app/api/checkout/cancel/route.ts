@@ -1,27 +1,37 @@
 import { NextResponse } from "next/server";
-import { getStripeServer } from "@/app/lib/stripe";
+import { getPaystackManageLink, getPaystackPlanCode, isPaystackConfigured, listPaystackSubscriptions } from "@/app/lib/paystack";
 
 export async function POST(request: Request) {
-  const stripe = getStripeServer();
-
-  if (!stripe) {
-    return NextResponse.json({ error: "Stripe is not configured yet." }, { status: 503 });
+  if (!isPaystackConfigured()) {
+    return NextResponse.json({ error: "Paystack is not configured yet." }, { status: 503 });
   }
 
   try {
-    const body = (await request.json()) as { subscriptionId?: string };
-    const subscriptionId = body.subscriptionId?.trim();
+    const body = (await request.json()) as { customerId?: string };
+    const customerId = body.customerId?.trim();
 
-    if (!subscriptionId) {
-      return NextResponse.json({ error: "Missing subscription id." }, { status: 400 });
+    if (!customerId) {
+      return NextResponse.json({ error: "Missing Paystack customer id." }, { status: 400 });
     }
 
-    await stripe.subscriptions.cancel(subscriptionId, {
-      prorate: false,
-    });
+    const expectedPlanCode = getPaystackPlanCode();
+    const subscriptions = await listPaystackSubscriptions(customerId);
+    const activeSubscription =
+      subscriptions.find((item) => item.plan?.plan_code === expectedPlanCode && item.subscription_code) ||
+      subscriptions.find((item) => item.subscription_code);
 
-    return NextResponse.json({ cancelled: true });
-  } catch {
-    return NextResponse.json({ error: "The subscription could not be cancelled right now." }, { status: 500 });
+    if (!activeSubscription?.subscription_code) {
+      return NextResponse.json({ error: "No Paystack subscription was found for this customer yet." }, { status: 404 });
+    }
+
+    const url = await getPaystackManageLink(activeSubscription.subscription_code);
+
+    if (!url) {
+      return NextResponse.json({ error: "Paystack did not return a manage-subscription link right now." }, { status: 500 });
+    }
+
+    return NextResponse.json({ cancelled: true, url });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "The subscription could not be managed right now." }, { status: 500 });
   }
 }

@@ -35,7 +35,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
   async function cancelSubscription() {
     const subscription = getStoredSubscription();
 
-    if (!subscription?.subscriptionId) {
+    if (!subscription?.customerId) {
       setStoredPlan("free");
       clearStoredSubscription();
       setCurrentPlan("free");
@@ -51,20 +51,18 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ subscriptionId: subscription.subscriptionId }),
+        body: JSON.stringify({ customerId: subscription.customerId }),
       });
 
-      const data = (await response.json()) as { cancelled?: boolean; error?: string };
+      const data = (await response.json()) as { cancelled?: boolean; url?: string; error?: string };
 
-      if (!response.ok || !data.cancelled) {
-        throw new Error(data.error || "The subscription could not be cancelled.");
+      if (!response.ok || !data.cancelled || !data.url) {
+        throw new Error(data.error || "The subscription could not be managed.");
       }
 
-      clearStoredSubscription();
-      setStoredPlan("free");
-      setCurrentPlan("free");
+      window.location.href = data.url;
     } catch (error) {
-      setCancelError(error instanceof Error ? error.message : "The subscription could not be cancelled.");
+      setCancelError(error instanceof Error ? error.message : "The subscription could not be managed.");
     } finally {
       setIsCancelling(false);
     }
@@ -118,16 +116,15 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
               disabled={isCancelling}
               className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-3 text-sm font-semibold text-[#7c5645] hover:bg-[#efd9d3]"
             >
-              {isCancelling ? "Cancelling..." : "Cancel Subscription"}
+              {isCancelling ? "Opening..." : "Manage Subscription"}
             </button>
-            <p className="text-xs leading-5 text-[#8c8378]">Cancellation stops future charges in the live billing flow. Previous successful payments are not refundable.</p>
+            <p className="text-xs leading-5 text-[#8c8378]">This opens Paystack&apos;s secure subscription page, where the customer can cancel future charges. Previous successful payments are not refundable.</p>
             {cancelError ? <p className="text-xs text-[#8b5b4d]">{cancelError}</p> : null}
           </div>
         ) : (
           <UpgradeButton
             label={plan.ctaLabel}
             redirectToPricing={false}
-            requireAuth={false}
             className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
           />
         )}

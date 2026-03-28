@@ -5,7 +5,7 @@ import { FREE_DAILY_GENERATIONS } from "./site";
 
 const usageKey = "ace-free-usage-v2";
 const planKey = "ace-launch-plan-v1";
-const subscriptionKey = "ace-stripe-subscription-v1";
+const subscriptionKey = "ace-paystack-subscription-v1";
 const usageScopeKey = "ace-auth-usage-scope-v1";
 export const planChangeEventName = "ace-plan-change";
 
@@ -133,10 +133,14 @@ export function getStoredSubscription(): StoredSubscription | null {
 
   try {
     const parsed = JSON.parse(raw) as Partial<StoredSubscription>;
-    if (typeof parsed.customerId === "string" && typeof parsed.subscriptionId === "string" && typeof parsed.status === "string") {
+    if (typeof parsed.customerId === "string" && typeof parsed.status === "string") {
       return {
+        provider: "paystack",
         customerId: parsed.customerId,
-        subscriptionId: parsed.subscriptionId,
+        customerCode: typeof parsed.customerCode === "string" ? parsed.customerCode : undefined,
+        subscriptionCode: typeof parsed.subscriptionCode === "string" ? parsed.subscriptionCode : undefined,
+        email: typeof parsed.email === "string" ? parsed.email : undefined,
+        reference: typeof parsed.reference === "string" ? parsed.reference : undefined,
         status: parsed.status,
       };
     }

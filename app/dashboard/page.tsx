@@ -89,20 +89,27 @@ function DashboardPageInner() {
 
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`);
+      const response = await fetch(`/api/checkout/verify?reference=${encodeURIComponent(sessionId)}`);
       const data = (await response.json()) as {
         active?: boolean;
         customerId?: string | null;
-        subscriptionId?: string | null;
+        customerCode?: string | null;
+        subscriptionCode?: string | null;
         status?: string | null;
+        customerEmail?: string | null;
+        reference?: string | null;
       };
 
       if (response.ok && data.active) {
         setStoredPlan("pro");
-        if (typeof data.customerId === "string" && typeof data.subscriptionId === "string" && typeof data.status === "string") {
+        if (typeof data.customerId === "string" && typeof data.status === "string") {
           setStoredSubscription({
+            provider: "paystack",
             customerId: data.customerId,
-            subscriptionId: data.subscriptionId,
+            customerCode: typeof data.customerCode === "string" ? data.customerCode : undefined,
+            subscriptionCode: typeof data.subscriptionCode === "string" ? data.subscriptionCode : undefined,
+            email: typeof data.customerEmail === "string" ? data.customerEmail : undefined,
+            reference: typeof data.reference === "string" ? data.reference : undefined,
             status: data.status,
           });
         }
@@ -130,7 +137,7 @@ function DashboardPageInner() {
   }, [isAuthReady, openAuthModal, user]);
 
   useEffect(() => {
-    const sessionId = searchParams.get("session_id");
+    const sessionId = searchParams.get("reference");
     const checkoutState = searchParams.get("checkout");
 
     if (checkoutState === "success" && sessionId) {
