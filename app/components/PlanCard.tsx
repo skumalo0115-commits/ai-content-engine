@@ -14,7 +14,7 @@ type PlanCardProps = {
 };
 
 export function PlanCard({ plan, featured = false }: PlanCardProps) {
-  const { runAuthenticated } = useAuth();
+  const { runAuthenticated, isAuthReady } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<"free" | "pro">("free");
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -96,7 +96,9 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
           ))}
         </div>
 
-        {plan.key === "free" ? (
+        {!isAuthReady ? (
+          <div className="h-[3.5rem] rounded-2xl border border-black/8 bg-white/70" />
+        ) : plan.key === "free" ? (
           <button
             type="button"
             onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}

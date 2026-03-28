@@ -8,7 +8,7 @@ declare module "firebase/app" {
     appId?: string;
   }
 
-  export interface FirebaseApp {}
+  export type FirebaseApp = object;
 
   export function getApps(): FirebaseApp[];
   export function getApp(name?: string): FirebaseApp;
@@ -18,7 +18,7 @@ declare module "firebase/app" {
 declare module "firebase/auth" {
   import type { FirebaseApp } from "firebase/app";
 
-  export interface Persistence {}
+  export type Persistence = object;
 
   export interface User {
     uid: string;
@@ -48,4 +48,29 @@ declare module "firebase/auth" {
   export function signInWithPopup(auth: Auth, provider: GoogleAuthProvider): Promise<UserCredential>;
   export function signOut(auth: Auth): Promise<void>;
   export function updateProfile(user: User, profile: { displayName?: string | null; photoURL?: string | null }): Promise<void>;
+}
+
+declare module "firebase/firestore" {
+  import type { FirebaseApp } from "firebase/app";
+
+  export type Firestore = object;
+  export interface DocumentData {
+    [key: string]: unknown;
+  }
+  export interface SetOptions {
+    merge?: boolean;
+  }
+  export interface DocumentReference {
+    readonly id: string;
+  }
+  export interface DocumentSnapshot {
+    exists(): boolean;
+    data(): DocumentData | undefined;
+  }
+
+  export function getFirestore(app?: FirebaseApp): Firestore;
+  export function doc(firestore: Firestore, path: string, ...pathSegments: string[]): DocumentReference;
+  export function getDoc(reference: DocumentReference): Promise<DocumentSnapshot>;
+  export function setDoc(reference: DocumentReference, data: DocumentData, options?: SetOptions): Promise<void>;
+  export function onSnapshot(reference: DocumentReference, observer: (snapshot: DocumentSnapshot) => void): () => void;
 }

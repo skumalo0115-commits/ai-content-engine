@@ -31,6 +31,7 @@ export type PaystackVerifyData = {
   amount?: number;
   reference?: string;
   paid_at?: string;
+  metadata?: Record<string, unknown> | null;
   customer?: PaystackCustomer;
   plan?: string | null;
   plan_object?: PaystackPlanObject | null;

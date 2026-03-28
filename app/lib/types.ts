@@ -71,6 +71,14 @@ export type GenerateCalendarResponse = {
 
 export type PlanKey = "free" | "pro";
 
+export type AccountProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  company: string;
+  role: string;
+};
+
 export type PlanConfig = {
   key: PlanKey;
   name: string;
@@ -92,6 +100,13 @@ export type StoredSubscription = {
   email?: string;
   reference?: string;
   status: string;
+};
+
+export type AccountRecord = {
+  plan: PlanKey;
+  profile: AccountProfile;
+  subscription: StoredSubscription | null;
+  updatedAt: string;
 };
 
 export type ContactLink = {

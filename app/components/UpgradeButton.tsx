@@ -25,7 +25,7 @@ export function UpgradeButton({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<"free" | "pro">("free");
-  const { runAuthenticated, user } = useAuth();
+  const { runAuthenticated, user, isAuthReady } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export function UpgradeButton({
     }
   }
 
-  if (plan === "pro") {
+  if (!isAuthReady || plan === "pro") {
     return null;
   }
 

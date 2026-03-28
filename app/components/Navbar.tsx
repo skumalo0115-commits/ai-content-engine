@@ -19,7 +19,7 @@ type NavbarProps = {
 export function Navbar({ currentPlan, usageLabel, showStartFree = true }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, runAuthenticated, logout } = useAuth();
+  const { user, isAuthReady, runAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [plan, setPlan] = useState<"free" | "pro">("free");
   const initials = useMemo(() => {
@@ -81,7 +81,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               {currentPlan}
             </div>
           ) : null}
-          {!user && showStartFree ? (
+          {isAuthReady && !user && showStartFree ? (
             <button
               type="button"
               onClick={() => runAuthenticated({ redirectTo: "/dashboard" })}
@@ -90,14 +90,14 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <span className="relative z-[1]">Start Free</span>
             </button>
           ) : null}
-          {plan !== "pro" ? (
+          {isAuthReady && plan !== "pro" ? (
             <UpgradeButton
               compact
               label="Upgrade"
               className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
             />
           ) : null}
-          {user ? (
+          {isAuthReady && user ? (
             <div className="relative">
               <button
                 type="button"

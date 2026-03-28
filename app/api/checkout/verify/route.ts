@@ -26,11 +26,13 @@ export async function GET(request: Request) {
     const email = transaction.customer?.email;
     const customerName = [transaction.customer?.first_name, transaction.customer?.last_name].filter(Boolean).join(" ").trim();
     const matchedPlanCode = transaction.plan_object?.plan_code || transaction.plan || "";
+    const accountUid = typeof transaction.metadata?.uid === "string" ? transaction.metadata.uid : null;
     const isActive =
       transaction.status === "success" &&
       Boolean(transaction.paid_at) &&
       reference.startsWith("ace_") &&
       (matchedPlanCode === expectedPlanCode || transaction.amount === expectedAmount);
+    const isPending = transaction.status !== "success" || !transaction.paid_at;
 
     if (isActive && email) {
       try {
@@ -45,12 +47,14 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       active: isActive,
+      pending: isPending && !isActive,
       customerId: customerId ? String(customerId) : null,
       customerCode: customerCode || null,
       subscriptionCode: null,
       status: transaction.status || null,
       customerEmail: email || null,
       reference: transaction.reference || reference,
+      accountUid,
     });
   } catch (error) {
     console.error("Paystack checkout verification failed:", error);

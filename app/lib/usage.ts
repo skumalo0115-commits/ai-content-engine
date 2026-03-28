@@ -9,6 +9,14 @@ const subscriptionKey = "ace-paystack-subscription-v1";
 const usageScopeKey = "ace-auth-usage-scope-v1";
 export const planChangeEventName = "ace-plan-change";
 
+function getPlanStorageKey() {
+  return `${planKey}:${getUsageScope()}`;
+}
+
+function getSubscriptionStorageKey() {
+  return `${subscriptionKey}:${getUsageScope()}`;
+}
+
 function getUsageScope() {
   if (typeof window === "undefined") {
     return "guest";
@@ -102,6 +110,8 @@ export function setUsageAccountScope(uid: string | null) {
   } else {
     window.localStorage.removeItem(usageScopeKey);
   }
+
+  window.dispatchEvent(new CustomEvent(planChangeEventName, { detail: getStoredPlan() }));
 }
 
 export function getStoredPlan(): PlanKey {
@@ -109,7 +119,21 @@ export function getStoredPlan(): PlanKey {
     return "free";
   }
 
-  return window.localStorage.getItem(planKey) === "pro" ? "pro" : "free";
+  const scopedValue = window.localStorage.getItem(getPlanStorageKey());
+
+  if (scopedValue) {
+    return scopedValue === "pro" ? "pro" : "free";
+  }
+
+  const legacyValue = window.localStorage.getItem(planKey);
+
+  if (legacyValue) {
+    const nextPlan = legacyValue === "pro" ? "pro" : "free";
+    window.localStorage.setItem(getPlanStorageKey(), nextPlan);
+    return nextPlan;
+  }
+
+  return "free";
 }
 
 export function setStoredPlan(plan: PlanKey) {
@@ -117,7 +141,7 @@ export function setStoredPlan(plan: PlanKey) {
     return;
   }
 
-  window.localStorage.setItem(planKey, plan);
+  window.localStorage.setItem(getPlanStorageKey(), plan);
   window.dispatchEvent(new CustomEvent(planChangeEventName, { detail: plan }));
 }
 
@@ -126,7 +150,8 @@ export function getStoredSubscription(): StoredSubscription | null {
     return null;
   }
 
-  const raw = window.localStorage.getItem(subscriptionKey);
+  const scopedKey = getSubscriptionStorageKey();
+  const raw = window.localStorage.getItem(scopedKey) || window.localStorage.getItem(subscriptionKey);
   if (!raw) {
     return null;
   }
@@ -134,8 +159,8 @@ export function getStoredSubscription(): StoredSubscription | null {
   try {
     const parsed = JSON.parse(raw) as Partial<StoredSubscription>;
     if (typeof parsed.customerId === "string" && typeof parsed.status === "string") {
-      return {
-        provider: "paystack",
+      const nextSubscription = {
+        provider: "paystack" as const,
         customerId: parsed.customerId,
         customerCode: typeof parsed.customerCode === "string" ? parsed.customerCode : undefined,
         subscriptionCode: typeof parsed.subscriptionCode === "string" ? parsed.subscriptionCode : undefined,
@@ -143,8 +168,12 @@ export function getStoredSubscription(): StoredSubscription | null {
         reference: typeof parsed.reference === "string" ? parsed.reference : undefined,
         status: parsed.status,
       };
+
+      window.localStorage.setItem(scopedKey, JSON.stringify(nextSubscription));
+      return nextSubscription;
     }
   } catch {
+    window.localStorage.removeItem(scopedKey);
     window.localStorage.removeItem(subscriptionKey);
   }
 
@@ -156,7 +185,7 @@ export function setStoredSubscription(subscription: StoredSubscription) {
     return;
   }
 
-  window.localStorage.setItem(subscriptionKey, JSON.stringify(subscription));
+  window.localStorage.setItem(getSubscriptionStorageKey(), JSON.stringify(subscription));
 }
 
 export function clearStoredSubscription() {
@@ -164,5 +193,5 @@ export function clearStoredSubscription() {
     return;
   }
 
-  window.localStorage.removeItem(subscriptionKey);
+  window.localStorage.removeItem(getSubscriptionStorageKey());
 }

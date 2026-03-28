@@ -11,8 +11,10 @@ import {
   updateProfile as updateFirebaseProfile,
   type User as FirebaseUser,
 } from "firebase/auth";
+import { ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
-import { setUsageAccountScope } from "@/app/lib/usage";
+import type { AccountProfile } from "@/app/lib/types";
+import { clearStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -134,6 +136,16 @@ function toAuthUser(firebaseUser: FirebaseUser, profileOverride?: StoredProfileO
   };
 }
 
+function toAccountProfile(user: AuthUser): AccountProfile {
+  return {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    company: user.company,
+    role: user.role,
+  };
+}
+
 function getInitialForm(mode: AuthMode, user?: AuthUser | null) {
   return {
     firstName: mode === "signup" ? user?.firstName || "" : "",
@@ -185,11 +197,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const navigateTo = useCallback(
     (path: string) => {
-      if (typeof window !== "undefined") {
-        window.location.assign(path);
-        return;
-      }
-
       router.push(path);
     },
     [router],
@@ -198,6 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isCancelled = false;
     let unsubscribe = () => {};
+    let unsubscribeAccount = () => {};
 
     if (!isFirebaseConfigured || !firebaseAuth) {
       setIsAuthReady(true);
@@ -216,8 +224,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
+          unsubscribeAccount();
           setUsageAccountScope(nextFirebaseUser?.uid || null);
-          setUser(nextFirebaseUser ? toAuthUser(nextFirebaseUser) : null);
+
+          if (!nextFirebaseUser) {
+            clearStoredSubscription();
+            setStoredPlan("free");
+            setUser(null);
+            setIsAuthReady(true);
+            return;
+          }
+
+          const fallbackUser = toAuthUser(nextFirebaseUser);
+          setUser(fallbackUser);
+          setIsAuthReady(true);
+
+          unsubscribeAccount = subscribeToAccountRecord(nextFirebaseUser.uid, toAccountProfile(fallbackUser), (record) => {
+            if (isCancelled) {
+              return;
+            }
+
+            if (!record) {
+              setUser(fallbackUser);
+              return;
+            }
+
+            const nextOverride = {
+              firstName: record.profile.firstName,
+              lastName: record.profile.lastName,
+              company: record.profile.company,
+              role: record.profile.role,
+            };
+
+            setStoredPlan(record.plan);
+            if (record.subscription) {
+              setStoredSubscription(record.subscription);
+            } else {
+              clearStoredSubscription();
+            }
+            setUser(toAuthUser(nextFirebaseUser, nextOverride));
+          });
+
           setIsAuthReady(true);
         });
       });
@@ -225,6 +272,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isCancelled = true;
       unsubscribe();
+      unsubscribeAccount();
     };
   }, []);
 
@@ -244,7 +292,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const continueAfterAuth = useCallback(
     (authenticatedFirebaseUser: FirebaseUser) => {
-      setUser(toAuthUser(authenticatedFirebaseUser));
+      const nextUser = toAuthUser(authenticatedFirebaseUser);
+      setUser(nextUser);
+      void ensureAccountRecord(authenticatedFirebaseUser.uid, toAccountProfile(nextUser)).catch(() => undefined);
       const pending = pendingRequestRef.current;
       pendingRequestRef.current = null;
       setIsOpen(false);
@@ -322,12 +372,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: updates.role?.trim() || user.role,
       });
       const nextDisplayName = buildFullName(nextFirstName, nextLastName);
+      const nextUser: AuthUser = {
+        ...user,
+        firstName: nextFirstName,
+        lastName: nextLastName,
+        company: updates.company?.trim() || user.company,
+        role: updates.role?.trim() || user.role,
+      };
 
       if (nextDisplayName && currentFirebaseUser.displayName !== nextDisplayName) {
         await updateFirebaseProfile(currentFirebaseUser, { displayName: nextDisplayName });
       }
 
       setUser(toAuthUser(currentFirebaseUser, nextProfileOverride));
+      void updateAccountProfile(currentFirebaseUser.uid, toAccountProfile(nextUser)).catch(() => undefined);
     },
     [user],
   );

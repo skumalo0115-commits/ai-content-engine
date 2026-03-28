@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { activateAccountSubscription } from "@/app/lib/account-store";
 import { useAuth } from "@/app/components/AuthProvider";
 import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
@@ -52,6 +53,12 @@ const lockedPreviewStrategy: GeneratedStrategy = {
   videoRecommendations: starterStrategy.videoRecommendations,
 };
 
+function waitFor(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,32 +95,68 @@ function DashboardPageInner() {
   });
 
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
-    try {
-      const response = await fetch(`/api/checkout/verify?reference=${encodeURIComponent(sessionId)}`);
-      const data = (await response.json()) as {
-        active?: boolean;
-        customerId?: string | null;
-        customerCode?: string | null;
-        subscriptionCode?: string | null;
-        status?: string | null;
-        customerEmail?: string | null;
-        reference?: string | null;
-      };
+    let didActivate = false;
 
-      if (response.ok && data.active) {
-        setStoredPlan("pro");
-        if (typeof data.customerId === "string" && typeof data.status === "string") {
-          setStoredSubscription({
-            provider: "paystack",
+    try {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const response = await fetch(`/api/checkout/verify?reference=${encodeURIComponent(sessionId)}`, {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          active?: boolean;
+          pending?: boolean;
+          customerId?: string | null;
+          customerCode?: string | null;
+          subscriptionCode?: string | null;
+          status?: string | null;
+          customerEmail?: string | null;
+          reference?: string | null;
+          accountUid?: string | null;
+          error?: string;
+        };
+
+        if (response.ok && data.active && typeof data.customerId === "string" && typeof data.status === "string") {
+          const nextSubscription = {
+            provider: "paystack" as const,
             customerId: data.customerId,
             customerCode: typeof data.customerCode === "string" ? data.customerCode : undefined,
             subscriptionCode: typeof data.subscriptionCode === "string" ? data.subscriptionCode : undefined,
             email: typeof data.customerEmail === "string" ? data.customerEmail : undefined,
-            reference: typeof data.reference === "string" ? data.reference : undefined,
+            reference: typeof data.reference === "string" ? data.reference : sessionId,
             status: data.status,
-          });
+          };
+
+          setStoredPlan("pro");
+          setStoredSubscription(nextSubscription);
+          syncClientState();
+
+          if (user && (!data.accountUid || data.accountUid === user.uid)) {
+            await activateAccountSubscription(user.uid, {
+              profile: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                company: user.company,
+                role: user.role,
+              },
+              subscription: nextSubscription,
+            }).catch(() => undefined);
+          }
+
+          didActivate = true;
+          setError(null);
+          break;
         }
-        syncClientState();
+
+        if (!data.pending) {
+          throw new Error(data.error || "Your payment was approved, but Pro could not be unlocked yet.");
+        }
+
+        await waitFor(1200 * (attempt + 1));
+      }
+
+      if (!didActivate) {
+        setError("Your payment is still syncing with Paystack. Please refresh the dashboard in a few seconds if Pro does not appear yet.");
       }
     } finally {
       router.replace("/dashboard");
@@ -140,7 +183,7 @@ function DashboardPageInner() {
     const sessionId = searchParams.get("reference") || searchParams.get("trxref");
     const checkoutState = searchParams.get("checkout");
 
-    if (sessionId) {
+    if (sessionId && isAuthReady) {
       void verifyCheckout(sessionId);
       return;
     }
@@ -154,7 +197,7 @@ function DashboardPageInner() {
       setStoredPlan("free");
       syncClientState();
     }
-  }, [searchParams]);
+  }, [isAuthReady, searchParams]);
 
   const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
