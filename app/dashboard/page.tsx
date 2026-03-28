@@ -116,7 +116,7 @@ function DashboardPageInner() {
         syncClientState();
       }
     } finally {
-      router.replace("/dashboard?checkout=success");
+      router.replace("/dashboard");
     }
   });
 
@@ -137,10 +137,10 @@ function DashboardPageInner() {
   }, [isAuthReady, openAuthModal, user]);
 
   useEffect(() => {
-    const sessionId = searchParams.get("reference");
+    const sessionId = searchParams.get("reference") || searchParams.get("trxref");
     const checkoutState = searchParams.get("checkout");
 
-    if (checkoutState === "success" && sessionId) {
+    if (sessionId) {
       void verifyCheckout(sessionId);
       return;
     }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPaystackPlanCode, isPaystackConfigured, verifyPaystackTransaction } from "@/app/lib/paystack";
+import { getPaystackPlan, getPaystackPlanCode, isPaystackConfigured, verifyPaystackTransaction } from "@/app/lib/paystack";
 import { sendProSubscriptionConfirmationEmail } from "@/app/lib/subscription-email";
 
 export const runtime = "nodejs";
@@ -18,13 +18,19 @@ export async function GET(request: Request) {
 
   try {
     const transaction = await verifyPaystackTransaction(reference);
+    const plan = await getPaystackPlan();
     const expectedPlanCode = getPaystackPlanCode();
+    const expectedAmount = plan.amount || 0;
     const customerId = transaction.customer?.id;
     const customerCode = transaction.customer?.customer_code;
     const email = transaction.customer?.email;
     const customerName = [transaction.customer?.first_name, transaction.customer?.last_name].filter(Boolean).join(" ").trim();
     const matchedPlanCode = transaction.plan_object?.plan_code || transaction.plan || "";
-    const isActive = transaction.status === "success" && Boolean(transaction.paid_at) && matchedPlanCode === expectedPlanCode;
+    const isActive =
+      transaction.status === "success" &&
+      Boolean(transaction.paid_at) &&
+      reference.startsWith("ace_") &&
+      (matchedPlanCode === expectedPlanCode || transaction.amount === expectedAmount);
 
     if (isActive && email) {
       try {
