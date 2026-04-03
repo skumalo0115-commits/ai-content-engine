@@ -25,6 +25,10 @@ function getUsageScope() {
   return window.localStorage.getItem(usageScopeKey) || "guest";
 }
 
+export function getUsageAccountScope() {
+  return getUsageScope();
+}
+
 function getUsageStorageKey() {
   return `${usageKey}:${getUsageScope()}`;
 }

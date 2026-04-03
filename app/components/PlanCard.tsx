@@ -51,7 +51,10 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ customerId: subscription.customerId }),
+        body: JSON.stringify({
+          customerId: subscription.customerId,
+          subscriptionCode: subscription.subscriptionCode,
+        }),
       });
 
       const data = (await response.json()) as { cancelled?: boolean; url?: string; error?: string };
@@ -110,7 +113,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
           <div className="space-y-3">
             <div className="rounded-[1.3rem] border border-[#cfdccd] bg-[#edf5f0] p-4 text-sm text-[#20584f]">
               <p className="font-semibold">Subscription active</p>
-              <p className="mt-2 leading-6">Pro is active on this browser. Unlimited generations and the 14-day AI calendar are ready to use.</p>
+              <p className="mt-2 leading-6">Pro is active on this account. Unlimited generations and the 14-day AI calendar are ready to use.</p>
             </div>
             <button
               type="button"

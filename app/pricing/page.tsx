@@ -25,7 +25,7 @@ export default function PricingPage() {
       <section className="glass-panel rounded-[32px] p-8">
         <h2 className="text-2xl font-semibold text-[#181614]">What Pro unlocks right now</h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[#5f584f]">
-          The Pro card now starts the real Paystack subscription checkout flow. Once the first payment is approved, Pro unlocks on this browser and the premium features start working immediately, including the saved-content schedule builder and the 14-day AI calendar.
+          The Pro card now starts the real Paystack subscription checkout flow. Once the first payment is approved, Pro unlocks on that specific account and the premium features start working immediately, including the saved-content schedule builder and the 14-day AI calendar.
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[#5f584f]">
           When a user opens the subscription management flow from Paystack, they can cancel future deductions there. Previous successful payments are not refundable.

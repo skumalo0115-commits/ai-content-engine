@@ -31,7 +31,7 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
         <p className="editorial-label text-xs">Launch Plan</p>
         <p className="mt-2 text-xl font-semibold text-[#181614]">{currentPlan}</p>
         <p className="mt-2 text-sm leading-6 text-[#5f584f]">
-          {currentPlan === "Pro" ? "Unlimited generations unlocked on this browser." : `${remainingFreeGenerations} free generations left on this account.`}
+          {currentPlan === "Pro" ? "Unlimited generations unlocked on this account." : `${remainingFreeGenerations} free generations left on this account.`}
         </p>
       </div>
 

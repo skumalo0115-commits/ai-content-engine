@@ -1,8 +1,13 @@
 "use client";
 
 import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrategy } from "./types";
+import { getUsageAccountScope } from "./usage";
 
 const savedContentKey = "ace-saved-content-v1";
+
+function getSavedContentStorageKey() {
+  return `${savedContentKey}:${getUsageAccountScope()}`;
+}
 
 function getStrategySignature(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
   return JSON.stringify({
@@ -62,7 +67,7 @@ function getSavedContentFromStorage() {
     return [];
   }
 
-  const raw = window.localStorage.getItem(savedContentKey);
+  const raw = window.localStorage.getItem(getSavedContentStorageKey());
   if (!raw) {
     return [];
   }
@@ -97,7 +102,7 @@ function setSavedContent(entries: SavedStrategy[]) {
     return;
   }
 
-  window.localStorage.setItem(savedContentKey, JSON.stringify(entries));
+  window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
 }
 
 export function getSavedStrategies() {
