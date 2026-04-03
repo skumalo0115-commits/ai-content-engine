@@ -237,6 +237,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       if (!response.ok) {
+        if (response.status >= 400 && response.status < 500) {
+          clearStoredSubscription();
+          setStoredPlan("free");
+          subscriptionSyncRef.current = null;
+          await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
+        }
         return;
       }
 
@@ -312,6 +318,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           const fallbackUser = toAuthUser(nextFirebaseUser);
+          clearStoredSubscription();
+          setStoredPlan("free");
+          subscriptionSyncRef.current = null;
           setUser(fallbackUser);
           setIsAuthReady(true);
 
@@ -336,7 +345,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const hasValidSubscription = Boolean(record.subscription?.customerId);
 
             if (hasValidSubscription) {
-              setStoredPlan("pro");
+              setStoredPlan("free");
               setStoredSubscription(record.subscription);
               void syncSubscriptionStatus(nextUserWithProfile, record.profile);
             } else {
@@ -378,6 +387,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const continueAfterAuth = useCallback(
     (authenticatedFirebaseUser: FirebaseUser) => {
       const nextUser = toAuthUser(authenticatedFirebaseUser);
+      setUsageAccountScope(authenticatedFirebaseUser.uid);
+      clearStoredSubscription();
+      setStoredPlan("free");
+      subscriptionSyncRef.current = null;
       setUser(nextUser);
       void ensureAccountRecord(authenticatedFirebaseUser.uid, toAccountProfile(nextUser)).catch(() => undefined);
       const pending = pendingRequestRef.current;
@@ -583,8 +596,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <h2 className="mt-2 text-3xl font-semibold text-[#181614]">{mode === "signup" ? "Create your account" : "Welcome back"}</h2>
                 <p className="mt-2 text-sm leading-6 text-[#645b51]">
                   {mode === "signup"
-                    ? "Create a real Firebase account with email and password, or continue with Google."
-                    : "Log in with your Firebase account to continue to the exact page you clicked."}
+                    ? "Create your account with email and password. Google sign-in is optional."
+                    : "Log in with your email and password, or use Google if you prefer."}
                 </p>
               </div>
               <button type="button" onClick={closeModal} className="rounded-full border border-black/8 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#3d3935]">
@@ -607,22 +620,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               >
                 Log in
               </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void continueWithGoogle()}
-              disabled={isSubmitting}
-              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <GoogleIcon className="h-5 w-5" />
-              {isSubmitting ? "Working..." : "Continue with Google"}
-            </button>
-
-            <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-[#8d8479]">
-              <span className="h-px flex-1 bg-black/8" />
-              Or use email
-              <span className="h-px flex-1 bg-black/8" />
             </div>
 
             <form className="mt-5 space-y-4" onSubmit={(event) => void submit(event)}>
@@ -714,6 +711,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 {isSubmitting ? "Working..." : mode === "signup" ? "Create account" : "Log in"}
               </button>
             </form>
+
+            <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-[#8d8479]">
+              <span className="h-px flex-1 bg-black/8" />
+              Or use Google
+              <span className="h-px flex-1 bg-black/8" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void continueWithGoogle()}
+              disabled={isSubmitting}
+              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <GoogleIcon className="h-5 w-5" />
+              {isSubmitting ? "Working..." : "Continue with Google"}
+            </button>
           </div>
         </div>
       ) : null}
