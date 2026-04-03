@@ -104,6 +104,18 @@ export function incrementFreeGeneration() {
   return Math.max(0, FREE_DAILY_GENERATIONS - nextState.count);
 }
 
+export function setUsageStateCount(count: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextState: UsageLimitState = {
+    count: Math.max(0, Number.isFinite(count) ? Number(count) : 0),
+  };
+
+  window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(nextState));
+}
+
 export function setUsageAccountScope(uid: string | null) {
   if (typeof window === "undefined") {
     return;

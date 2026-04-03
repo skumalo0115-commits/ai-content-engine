@@ -11,6 +11,10 @@ function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
 }
 
+function getLegacySavedContentStorageKey() {
+  return savedContentKey;
+}
+
 function getStrategySignature(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
   return JSON.stringify({
     businessType: entry.brief.businessType.trim().toLowerCase(),
@@ -103,12 +107,31 @@ function getSavedContentFromStorage() {
   }
 }
 
+function getLegacySavedContentFromStorage() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(getLegacySavedContentStorageKey());
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    return normalizeSavedContent(JSON.parse(raw) as unknown[]);
+  } catch {
+    window.localStorage.removeItem(getLegacySavedContentStorageKey());
+    return [];
+  }
+}
+
 function setSavedContent(entries: SavedStrategy[]) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
+  window.localStorage.removeItem(getLegacySavedContentStorageKey());
 }
 
 function getCurrentAccountUid() {
@@ -128,7 +151,10 @@ async function persistSavedContent(entries: SavedStrategy[]) {
 }
 
 export function getSavedStrategies() {
-  return getSavedContentFromStorage().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const scopedEntries = getSavedContentFromStorage();
+  const legacyEntries = getLegacySavedContentFromStorage();
+  const entries = scopedEntries.length > 0 ? scopedEntries : legacyEntries;
+  return entries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
 export function hasSavedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {

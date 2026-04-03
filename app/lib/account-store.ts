@@ -20,6 +20,10 @@ function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeCount(value: unknown) {
+  return Number.isFinite(value) ? Math.max(0, Number(value)) : 0;
+}
+
 function normalizeSubscription(value: unknown): StoredSubscription | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -123,6 +127,7 @@ function normalizeAccountRecord(value: unknown, fallbackProfile: AccountProfile)
       profile: fallbackProfile,
       subscription: null,
       savedContent: [],
+      usageCount: 0,
       updatedAt: new Date().toISOString(),
     };
   }
@@ -134,6 +139,7 @@ function normalizeAccountRecord(value: unknown, fallbackProfile: AccountProfile)
     profile: normalizeProfile(candidate.profile, fallbackProfile),
     subscription: normalizeSubscription(candidate.subscription),
     savedContent: normalizeSavedContent(candidate.savedContent),
+    usageCount: normalizeCount(candidate.usageCount),
     updatedAt: normalizeString(candidate.updatedAt) || new Date().toISOString(),
   };
 }
@@ -163,6 +169,7 @@ export async function ensureAccountRecord(uid: string, fallbackProfile: AccountP
     profile: fallbackProfile,
     subscription: null,
     savedContent: [],
+    usageCount: 0,
     updatedAt: new Date().toISOString(),
   };
 
@@ -258,4 +265,14 @@ export async function updateAccountSavedContent(uid: string, savedContent: Saved
   }
 
   await setDoc(ref, buildPatch({ savedContent }), { merge: true });
+}
+
+export async function updateAccountUsageCount(uid: string, usageCount: number) {
+  const ref = getAccountDoc(uid);
+
+  if (!ref) {
+    return;
+  }
+
+  await setDoc(ref, buildPatch({ usageCount: Math.max(0, usageCount) }), { merge: true });
 }

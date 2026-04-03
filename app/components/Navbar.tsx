@@ -108,7 +108,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               </button>
 
               {isMenuOpen ? (
-                <div className="absolute right-0 top-14 w-44 rounded-[1.2rem] border border-black/8 bg-white p-2 shadow-[0_20px_40px_rgba(24,22,20,0.08)]">
+                <div className="absolute right-0 top-14 hidden w-44 rounded-[1.2rem] border border-black/8 bg-white p-2 shadow-[0_20px_40px_rgba(24,22,20,0.08)] lg:block">
                   <button
                     type="button"
                     onClick={() => {

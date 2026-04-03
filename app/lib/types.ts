@@ -107,6 +107,7 @@ export type AccountRecord = {
   profile: AccountProfile;
   subscription: StoredSubscription | null;
   savedContent: SavedStrategy[];
+  usageCount: number;
   updatedAt: string;
 };
 

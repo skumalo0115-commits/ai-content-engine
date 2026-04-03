@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { activateAccountSubscription, subscribeToAccountRecord } from "@/app/lib/account-store";
+import { activateAccountSubscription, subscribeToAccountRecord, updateAccountUsageCount } from "@/app/lib/account-store";
 import { useAuth } from "@/app/components/AuthProvider";
 import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
@@ -14,7 +14,7 @@ import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
-import { clearAllStoredBillingState, clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearStoredSubscription, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 
@@ -67,6 +67,7 @@ function DashboardPageInner() {
   const [lastBrief, setLastBrief] = useState<GeneratePayload | null>(null);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
+  const [accountUsageCount, setAccountUsageCount] = useState(() => getUsageState().count);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sourceLabel, setSourceLabel] = useState<string>("Platform playbook");
@@ -82,7 +83,6 @@ function DashboardPageInner() {
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
     setPlan(nextPlan);
-    setRemainingFreeGenerations(nextPlan === "pro" ? FREE_DAILY_GENERATIONS : getRemainingFreeGenerations());
     const nextSaved = getSavedStrategies();
     setSavedStrategies(nextSaved);
     setExpandedSavedId((currentId) => {
@@ -198,6 +198,10 @@ function DashboardPageInner() {
   }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
+    setRemainingFreeGenerations(plan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
+  }, [accountUsageCount, plan]);
+
+  useEffect(() => {
     if (!user) {
       setSavedStrategies(getSavedStrategies());
       return;
@@ -216,6 +220,16 @@ function DashboardPageInner() {
         if (!record) {
           setSavedStrategies(getSavedStrategies());
           return;
+        }
+
+        const localUsageCount = getUsageState().count;
+
+        if (record.usageCount === 0 && localUsageCount > 0) {
+          setAccountUsageCount(localUsageCount);
+          void updateAccountUsageCount(user.uid, localUsageCount);
+        } else {
+          setAccountUsageCount(record.usageCount);
+          setUsageStateCount(record.usageCount);
         }
 
         void hydrateSavedStrategies(record.savedContent).then((entries) => {
@@ -289,9 +303,11 @@ function DashboardPageInner() {
         throw new Error(data.error || "Could not generate content right now.");
       }
 
-      if (plan !== "pro") {
-        const nextRemaining = incrementFreeGeneration();
-        setRemainingFreeGenerations(nextRemaining);
+      if (plan !== "pro" && user) {
+        const nextUsageCount = accountUsageCount + 1;
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+        void updateAccountUsageCount(user.uid, nextUsageCount).catch(() => undefined);
       }
 
       startTransition(() => {
