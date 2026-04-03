@@ -105,7 +105,7 @@ export function UpgradeButton({
         disabled={isLoading}
         className={className}
       >
-        <span className="relative z-[1]">{isLoading ? "Redirecting..." : label}</span>
+        <span className="relative z-[1]">{label}</span>
       </button>
       {error && !compact ? <p className="text-xs text-[#8b5b4d]">{error}</p> : null}
     </div>

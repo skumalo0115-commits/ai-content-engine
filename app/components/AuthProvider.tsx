@@ -55,6 +55,7 @@ type StoredProfileOverride = {
 type StoredProfileMap = Record<string, StoredProfileOverride>;
 
 const PROFILE_STORAGE_KEY = "ace-auth-profile-overrides";
+const SKIP_AUTH_MODAL_ONCE_KEY = "ace-skip-auth-modal-once";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -444,6 +445,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(SKIP_AUTH_MODAL_ONCE_KEY, "1");
+      }
+      pendingRequestRef.current = null;
+      setIsOpen(false);
+      setError(null);
+      setGoogleNotice(null);
+      setShowPassword(false);
+      setIsSubmitting(false);
+
       if (firebaseAuth) {
         await signOut(firebaseAuth);
       }
@@ -709,7 +720,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 disabled={isSubmitting}
                 className="interactive-pop w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Working..." : mode === "signup" ? "Create account" : "Log in"}
+                {mode === "signup" ? "Create account" : "Log in"}
               </button>
             </form>
 
@@ -726,7 +737,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <GoogleIcon className="h-5 w-5" />
-              {isSubmitting ? "Working..." : "Continue with Google"}
+              Continue with Google
             </button>
           </div>
         </div>

@@ -121,7 +121,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
               disabled={isCancelling}
               className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-3 text-sm font-semibold text-[#7c5645] hover:bg-[#efd9d3]"
             >
-              {isCancelling ? "Opening..." : "Manage Subscription"}
+              Manage Subscription
             </button>
             <p className="text-xs leading-5 text-[#8c8378]">This opens Paystack&apos;s secure subscription page, where the customer can cancel future charges. Previous successful payments are not refundable.</p>
             {cancelError ? <p className="text-xs text-[#8b5b4d]">{cancelError}</p> : null}

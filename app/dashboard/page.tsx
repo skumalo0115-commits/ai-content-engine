@@ -199,6 +199,11 @@ function DashboardPageInner() {
 
   useEffect(() => {
     if (isAuthReady && !user) {
+      if (typeof window !== "undefined" && window.sessionStorage.getItem("ace-skip-auth-modal-once") === "1") {
+        window.sessionStorage.removeItem("ace-skip-auth-modal-once");
+        return;
+      }
+
       openAuthModal({ mode: "signup", redirectTo: "/dashboard", closeRedirectTo: "/" });
     }
   }, [isAuthReady, openAuthModal, user]);
