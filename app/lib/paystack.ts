@@ -1,4 +1,5 @@
 const PAYSTACK_API_BASE = "https://api.paystack.co";
+const DEFAULT_PAYSTACK_PLAN_CODE = "PLN_wi4upx6992bt7kk";
 
 type PaystackEnvelope<T> = {
   status: boolean;
@@ -65,7 +66,7 @@ function getPaystackSecretKey() {
 }
 
 export function isPaystackConfigured() {
-  return Boolean(getPaystackSecretKey() && process.env.PAYSTACK_PLAN_CODE);
+  return Boolean(getPaystackSecretKey() && getPaystackPlanCode());
 }
 
 async function paystackRequest<T>(path: string, init?: RequestInit) {
@@ -95,7 +96,7 @@ async function paystackRequest<T>(path: string, init?: RequestInit) {
 }
 
 export function getPaystackPlanCode() {
-  return process.env.PAYSTACK_PLAN_CODE || "";
+  return process.env.PAYSTACK_PLAN_CODE || DEFAULT_PAYSTACK_PLAN_CODE;
 }
 
 export async function getPaystackPlan(planCode = getPaystackPlanCode()) {

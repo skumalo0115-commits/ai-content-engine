@@ -121,8 +121,19 @@ export function getStoredPlan(): PlanKey {
 
   const scopedValue = window.localStorage.getItem(getPlanStorageKey());
 
+  if (scopedValue === "pro") {
+    const scopedSubscription = getStoredSubscription();
+
+    if (scopedSubscription?.customerId) {
+      return "pro";
+    }
+
+    window.localStorage.setItem(getPlanStorageKey(), "free");
+    return "free";
+  }
+
   if (scopedValue) {
-    return scopedValue === "pro" ? "pro" : "free";
+    return "free";
   }
 
   return "free";
