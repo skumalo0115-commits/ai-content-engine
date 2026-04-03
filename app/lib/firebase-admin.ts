@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cert, getApp, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 function getFirebaseAdminConfig() {
@@ -29,3 +30,4 @@ const adminApp = isFirebaseAdminConfigured()
   : null;
 
 export const adminDb = adminApp ? getFirestore(adminApp) : null;
+export const adminAuth = adminApp ? getAuth(adminApp) : null;

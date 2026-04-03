@@ -12,6 +12,7 @@ import {
   type User as FirebaseUser,
 } from "firebase/auth";
 import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile, updateAccountUsageCount } from "@/app/lib/account-store";
+import { syncAccountStateToServer } from "@/app/lib/account-sync";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
 import { clearAllStoredBillingState, clearLegacyUsageState, getHighestStoredUsageCount, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope, setUsageStateCount } from "@/app/lib/usage";
@@ -351,7 +352,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUsageStateCount(nextUsageCount);
 
             if (localUsageCount > record.usageCount) {
-              void updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount)
+              void syncAccountStateToServer({ usageCount: localUsageCount })
+                .catch(() => updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount))
                 .then(() => clearLegacyUsageState())
                 .catch(() => undefined);
             } else if (nextUsageCount > 0) {

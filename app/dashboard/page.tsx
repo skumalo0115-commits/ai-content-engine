@@ -13,6 +13,7 @@ import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
+import { syncAccountStateToServer } from "@/app/lib/account-sync";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { clearAllStoredBillingState, clearLegacyUsageState, clearStoredSubscription, getHighestStoredUsageCount, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
@@ -229,7 +230,8 @@ function DashboardPageInner() {
         setUsageStateCount(nextUsageCount);
 
         if (localUsageCount > record.usageCount) {
-          void updateAccountUsageCount(user.uid, localUsageCount)
+          void syncAccountStateToServer({ usageCount: localUsageCount })
+            .catch(() => updateAccountUsageCount(user.uid, localUsageCount))
             .then(() => clearLegacyUsageState())
             .catch(() => undefined);
         } else if (nextUsageCount > 0) {
@@ -311,7 +313,9 @@ function DashboardPageInner() {
         const nextUsageCount = accountUsageCount + 1;
         setAccountUsageCount(nextUsageCount);
         setUsageStateCount(nextUsageCount);
-        void updateAccountUsageCount(user.uid, nextUsageCount).catch(() => undefined);
+        void syncAccountStateToServer({ usageCount: nextUsageCount })
+          .catch(() => updateAccountUsageCount(user.uid, nextUsageCount))
+          .catch(() => undefined);
       }
 
       startTransition(() => {

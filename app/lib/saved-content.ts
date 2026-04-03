@@ -2,6 +2,7 @@
 
 import { firebaseAuth } from "./firebase";
 import { updateAccountSavedContent } from "./account-store";
+import { syncAccountStateToServer } from "./account-sync";
 import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrategy } from "./types";
 import { getUsageAccountScope } from "./usage";
 
@@ -178,7 +179,12 @@ async function persistSavedContent(entries: SavedStrategy[]) {
     return;
   }
 
-  await updateAccountSavedContent(uid, entries);
+  try {
+    await syncAccountStateToServer({ savedContent: entries });
+    return;
+  } catch {
+    await updateAccountSavedContent(uid, entries);
+  }
 }
 
 export function getSavedStrategies() {
@@ -226,7 +232,11 @@ export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
     clearLegacySavedContentSources();
 
     if (hasRemoteChanges) {
-      await updateAccountSavedContent(currentAccountUid, mergedEntries);
+      try {
+        await syncAccountStateToServer({ savedContent: mergedEntries });
+      } catch {
+        await updateAccountSavedContent(currentAccountUid, mergedEntries);
+      }
     }
 
     return mergedEntries;
