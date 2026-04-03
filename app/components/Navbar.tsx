@@ -59,7 +59,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
             <BrandLogoIcon className="h-9 w-9" />
             <span className="max-w-[9rem] leading-tight sm:max-w-none">{siteConfig.name.toUpperCase()}</span>
           </Link>
-          <nav className="hidden items-center gap-5 text-sm text-[#4d463f] md:flex">
+          <nav className="hidden items-center gap-5 text-sm text-[#4d463f] lg:flex">
             {navLinks.map((link) => (
               <button key={link.href} type="button" onClick={() => runAuthenticated({ redirectTo: link.href })} className="nav-pill">
                 {link.label}
@@ -102,7 +102,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <button
                 type="button"
                 onClick={() => setIsMenuOpen((current) => !current)}
-                className="interactive-pop hidden h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-sm font-semibold text-[#181614] md:inline-flex"
+                className="interactive-pop hidden h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-sm font-semibold text-[#181614] lg:inline-flex"
               >
                 <span className="relative z-[1]">{initials}</span>
               </button>
@@ -136,7 +136,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
           <button
             type="button"
             onClick={() => setIsMenuOpen((current) => !current)}
-            className="interactive-pop inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-[#181614] md:hidden"
+            className="interactive-pop inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-[#181614] lg:hidden"
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           >
@@ -145,7 +145,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
         </div>
       </div>
       {isMenuOpen ? (
-        <div className="border-t border-black/6 bg-[rgba(247,244,238,0.98)] px-4 pb-4 pt-3 md:hidden">
+        <div className="border-t border-black/6 bg-[rgba(247,244,238,0.98)] px-4 pb-4 pt-3 lg:hidden">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-2">
             {currentPlan ? (
               <div className="inline-flex items-center gap-2 self-start rounded-full bg-[#e6efeb] px-3 py-1.5 text-xs text-[#20584f]">
