@@ -1,5 +1,7 @@
 "use client";
 
+import { firebaseAuth } from "./firebase";
+import { updateAccountSavedContent } from "./account-store";
 import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrategy } from "./types";
 import { getUsageAccountScope } from "./usage";
 
@@ -62,6 +64,27 @@ function isGeneratePayload(value: unknown): value is GeneratePayload {
   return typeof candidate.businessType === "string" && typeof candidate.targetAudience === "string" && typeof candidate.goal === "string";
 }
 
+function normalizeSavedContent(value: unknown): SavedStrategy[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is SavedStrategy => {
+    if (!entry || typeof entry !== "object") {
+      return false;
+    }
+
+    const candidate = entry as Partial<SavedStrategy>;
+    return (
+      typeof candidate.id === "string" &&
+      typeof candidate.createdAt === "string" &&
+      isGeneratePayload(candidate.brief) &&
+      isGeneratedStrategy(candidate.strategy) &&
+      (candidate.calendar == null || isGeneratedCalendar(candidate.calendar))
+    );
+  });
+}
+
 function getSavedContentFromStorage() {
   if (typeof window === "undefined") {
     return [];
@@ -73,26 +96,9 @@ function getSavedContentFromStorage() {
   }
 
   try {
-    const parsed = JSON.parse(raw) as unknown[];
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((entry): entry is SavedStrategy => {
-      if (!entry || typeof entry !== "object") {
-        return false;
-      }
-
-      const candidate = entry as Partial<SavedStrategy>;
-      return (
-        typeof candidate.id === "string" &&
-        typeof candidate.createdAt === "string" &&
-        isGeneratePayload(candidate.brief) &&
-        isGeneratedStrategy(candidate.strategy) &&
-        (candidate.calendar == null || isGeneratedCalendar(candidate.calendar))
-      );
-    });
+    return normalizeSavedContent(JSON.parse(raw) as unknown[]);
   } catch {
+    window.localStorage.removeItem(getSavedContentStorageKey());
     return [];
   }
 }
@@ -105,6 +111,22 @@ function setSavedContent(entries: SavedStrategy[]) {
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
 }
 
+function getCurrentAccountUid() {
+  return firebaseAuth?.currentUser?.uid || null;
+}
+
+async function persistSavedContent(entries: SavedStrategy[]) {
+  setSavedContent(entries);
+
+  const uid = getCurrentAccountUid();
+
+  if (!uid) {
+    return;
+  }
+
+  await updateAccountSavedContent(uid, entries);
+}
+
 export function getSavedStrategies() {
   return getSavedContentFromStorage().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
@@ -114,7 +136,20 @@ export function hasSavedStrategy(entry: { brief: GeneratePayload; strategy: Gene
   return getSavedStrategies().some((savedEntry) => getStrategySignature(savedEntry) === signature);
 }
 
-export function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
+export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
+  const normalizedEntries = normalizeSavedContent(entries).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const localEntries = getSavedStrategies();
+
+  if (normalizedEntries.length === 0 && localEntries.length > 0 && getCurrentAccountUid()) {
+    await persistSavedContent(localEntries);
+    return localEntries;
+  }
+
+  setSavedContent(normalizedEntries);
+  return normalizedEntries;
+}
+
+export async function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
   const savedEntries = getSavedStrategies();
   const signature = getStrategySignature(entry);
   const existingEntry = savedEntries.find((savedEntry) => getStrategySignature(savedEntry) === signature);
@@ -131,18 +166,18 @@ export function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy:
   };
 
   const nextEntries = [nextEntry, ...savedEntries];
-  setSavedContent(nextEntries);
+  await persistSavedContent(nextEntries);
   return { nextEntry, nextEntries, isDuplicate: false };
 }
 
-export function deleteSavedStrategy(id: string) {
+export async function deleteSavedStrategy(id: string) {
   const nextEntries = getSavedStrategies().filter((entry) => entry.id !== id);
-  setSavedContent(nextEntries);
+  await persistSavedContent(nextEntries);
   return nextEntries;
 }
 
-export function saveGeneratedCalendar(id: string, calendar: GeneratedCalendar) {
+export async function saveGeneratedCalendar(id: string, calendar: GeneratedCalendar) {
   const nextEntries = getSavedStrategies().map((entry) => (entry.id === id ? { ...entry, calendar } : entry));
-  setSavedContent(nextEntries);
+  await persistSavedContent(nextEntries);
   return nextEntries;
 }

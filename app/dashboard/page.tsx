@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { activateAccountSubscription } from "@/app/lib/account-store";
+import { activateAccountSubscription, subscribeToAccountRecord } from "@/app/lib/account-store";
 import { useAuth } from "@/app/components/AuthProvider";
 import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
@@ -11,7 +11,7 @@ import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
-import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
+import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { clearAllStoredBillingState, clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
@@ -198,6 +198,35 @@ function DashboardPageInner() {
   }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
+    if (!user) {
+      setSavedStrategies(getSavedStrategies());
+      return;
+    }
+
+    return subscribeToAccountRecord(
+      user.uid,
+      {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        company: user.company,
+        role: user.role,
+      },
+      (record) => {
+        if (!record) {
+          setSavedStrategies(getSavedStrategies());
+          return;
+        }
+
+        void hydrateSavedStrategies(record.savedContent).then((entries) => {
+          setSavedStrategies(entries);
+          setExpandedSavedId((currentId) => (currentId && entries.some((item) => item.id === currentId) ? currentId : null));
+        });
+      },
+    );
+  }, [user]);
+
+  useEffect(() => {
     if (isAuthReady && !user) {
       if (typeof window !== "undefined" && window.sessionStorage.getItem("ace-skip-auth-modal-once") === "1") {
         window.sessionStorage.removeItem("ace-skip-auth-modal-once");
@@ -276,19 +305,19 @@ function DashboardPageInner() {
     }
   }
 
-  function handleSaveStrategy() {
+  async function handleSaveStrategy() {
     if (!lastBrief || !canSaveCurrentStrategy) {
       return;
     }
 
-    const { nextEntries } = saveGeneratedStrategy({ brief: lastBrief, strategy });
+    const { nextEntries } = await saveGeneratedStrategy({ brief: lastBrief, strategy });
     setSavedStrategies(nextEntries);
     setExpandedSavedId(null);
     setActiveView("saved");
   }
 
-  function handleDeleteSavedStrategy(id: string) {
-    const nextEntries = deleteSavedStrategy(id);
+  async function handleDeleteSavedStrategy(id: string) {
+    const nextEntries = await deleteSavedStrategy(id);
     setSavedStrategies(nextEntries);
     setExpandedSavedId((currentId) => (currentId === id ? null : currentId));
     setCalendarTargetId((currentId) => (currentId === id ? null : currentId));
@@ -335,7 +364,7 @@ function DashboardPageInner() {
       }
 
       setActiveCalendar(data.calendar);
-      const nextEntries = saveGeneratedCalendar(item.id, data.calendar);
+      const nextEntries = await saveGeneratedCalendar(item.id, data.calendar);
       setSavedStrategies(nextEntries);
     } catch (calendarError) {
       setActiveCalendar(null);
@@ -440,7 +469,7 @@ function DashboardPageInner() {
                   isLocked={isLocked}
                   showDetailSections={strategy.title !== starterStrategy.title && strategy.title !== lockedPreviewStrategy.title}
                   showSaveButton={canSaveCurrentStrategy}
-                  onSave={handleSaveStrategy}
+                  onSave={() => void handleSaveStrategy()}
                   saveLabel={currentStrategyAlreadySaved ? "Already saved" : "Save to Saved Content"}
                   isSaveDisabled={currentStrategyAlreadySaved}
                 />
@@ -485,7 +514,7 @@ function DashboardPageInner() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteSavedStrategy(item.id)}
+                              onClick={() => void handleDeleteSavedStrategy(item.id)}
                               className="rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919]"
                             >
                               Delete
@@ -524,7 +553,7 @@ function DashboardPageInner() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteSavedStrategy(item.id)}
+                                onClick={() => void handleDeleteSavedStrategy(item.id)}
                                 className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3]"
                               >
                                 Delete
