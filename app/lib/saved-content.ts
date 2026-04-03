@@ -11,6 +11,10 @@ function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
 }
 
+function getGuestSavedContentStorageKey() {
+  return `${savedContentKey}:guest`;
+}
+
 function getLegacySavedContentStorageKey() {
   return savedContentKey;
 }
@@ -125,6 +129,24 @@ function getLegacySavedContentFromStorage() {
   }
 }
 
+function getGuestSavedContentFromStorage() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(getGuestSavedContentStorageKey());
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    return normalizeSavedContent(JSON.parse(raw) as unknown[]);
+  } catch {
+    window.localStorage.removeItem(getGuestSavedContentStorageKey());
+    return [];
+  }
+}
+
 function setSavedContent(entries: SavedStrategy[]) {
   if (typeof window === "undefined") {
     return;
@@ -132,6 +154,15 @@ function setSavedContent(entries: SavedStrategy[]) {
 
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
   window.localStorage.removeItem(getLegacySavedContentStorageKey());
+}
+
+function clearLegacySavedContentSources() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(getLegacySavedContentStorageKey());
+  window.localStorage.removeItem(getGuestSavedContentStorageKey());
 }
 
 function getCurrentAccountUid() {
@@ -152,8 +183,9 @@ async function persistSavedContent(entries: SavedStrategy[]) {
 
 export function getSavedStrategies() {
   const scopedEntries = getSavedContentFromStorage();
+  const guestEntries = getGuestSavedContentFromStorage();
   const legacyEntries = getLegacySavedContentFromStorage();
-  const entries = scopedEntries.length > 0 ? scopedEntries : legacyEntries;
+  const entries = scopedEntries.length > 0 ? scopedEntries : guestEntries.length > 0 ? guestEntries : legacyEntries;
   return entries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
@@ -162,13 +194,42 @@ export function hasSavedStrategy(entry: { brief: GeneratePayload; strategy: Gene
   return getSavedStrategies().some((savedEntry) => getStrategySignature(savedEntry) === signature);
 }
 
+function mergeSavedContent(primaryEntries: SavedStrategy[], secondaryEntries: SavedStrategy[]) {
+  const mergedEntries: SavedStrategy[] = [];
+  const seenIds = new Set<string>();
+  const seenSignatures = new Set<string>();
+
+  for (const entry of [...primaryEntries, ...secondaryEntries]) {
+    const signature = getStrategySignature(entry);
+
+    if (seenIds.has(entry.id) || seenSignatures.has(signature)) {
+      continue;
+    }
+
+    seenIds.add(entry.id);
+    seenSignatures.add(signature);
+    mergedEntries.push(entry);
+  }
+
+  return mergedEntries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}
+
 export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
   const normalizedEntries = normalizeSavedContent(entries).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  const localEntries = getSavedStrategies();
+  const localEntries = mergeSavedContent(getSavedContentFromStorage(), [...getGuestSavedContentFromStorage(), ...getLegacySavedContentFromStorage()]);
+  const mergedEntries = mergeSavedContent(normalizedEntries, localEntries);
+  const hasRemoteChanges = JSON.stringify(normalizedEntries) !== JSON.stringify(mergedEntries);
+  const currentAccountUid = getCurrentAccountUid();
 
-  if (normalizedEntries.length === 0 && localEntries.length > 0 && getCurrentAccountUid()) {
-    await persistSavedContent(localEntries);
-    return localEntries;
+  if (currentAccountUid) {
+    setSavedContent(mergedEntries);
+    clearLegacySavedContentSources();
+
+    if (hasRemoteChanges) {
+      await updateAccountSavedContent(currentAccountUid, mergedEntries);
+    }
+
+    return mergedEntries;
   }
 
   setSavedContent(normalizedEntries);
