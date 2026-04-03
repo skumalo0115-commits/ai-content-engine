@@ -125,14 +125,6 @@ export function getStoredPlan(): PlanKey {
     return scopedValue === "pro" ? "pro" : "free";
   }
 
-  const legacyValue = window.localStorage.getItem(planKey);
-
-  if (legacyValue) {
-    const nextPlan = legacyValue === "pro" ? "pro" : "free";
-    window.localStorage.setItem(getPlanStorageKey(), nextPlan);
-    return nextPlan;
-  }
-
   return "free";
 }
 
@@ -151,7 +143,7 @@ export function getStoredSubscription(): StoredSubscription | null {
   }
 
   const scopedKey = getSubscriptionStorageKey();
-  const raw = window.localStorage.getItem(scopedKey) || window.localStorage.getItem(subscriptionKey);
+  const raw = window.localStorage.getItem(scopedKey);
   if (!raw) {
     return null;
   }
@@ -174,7 +166,6 @@ export function getStoredSubscription(): StoredSubscription | null {
     }
   } catch {
     window.localStorage.removeItem(scopedKey);
-    window.localStorage.removeItem(subscriptionKey);
   }
 
   return null;
