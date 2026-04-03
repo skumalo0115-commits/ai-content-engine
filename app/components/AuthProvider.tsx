@@ -333,12 +333,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
+            const hasValidSubscription = Boolean(record.subscription?.customerId);
 
-            setStoredPlan(record.plan);
-            if (record.subscription) {
+            if (hasValidSubscription) {
+              setStoredPlan("pro");
               setStoredSubscription(record.subscription);
               void syncSubscriptionStatus(nextUserWithProfile, record.profile);
             } else {
+              if (record.plan !== "free") {
+                void deactivateAccountSubscription(nextFirebaseUser.uid, record.profile).catch(() => undefined);
+              }
+              setStoredPlan("free");
               subscriptionSyncRef.current = null;
               clearStoredSubscription();
             }
