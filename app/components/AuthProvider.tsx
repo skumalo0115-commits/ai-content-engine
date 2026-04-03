@@ -594,14 +594,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(7,10,18,0.58)] px-4 py-10"
+          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[rgba(7,10,18,0.58)] px-4 py-4 sm:items-center sm:py-10"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               closeModal();
             }
           }}
         >
-          <div className="w-full max-w-[28rem] rounded-[2rem] border border-black/8 bg-[#fbf8f3] p-6 shadow-[0_30px_90px_rgba(7,10,18,0.24)] sm:p-7">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[28rem] overflow-y-auto rounded-[1.6rem] border border-black/8 bg-[#fbf8f3] p-5 shadow-[0_30px_90px_rgba(7,10,18,0.24)] sm:max-h-[calc(100vh-5rem)] sm:rounded-[2rem] sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[0.7rem] uppercase tracking-[0.28em] text-[#20584f]">Account Access</p>

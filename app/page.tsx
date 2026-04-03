@@ -99,7 +99,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={openDashboard}
-              className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+              className="interactive-pop inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto"
             >
               <span className="relative z-[1] text-white">{user ? "Dashboard" : "Start Free"}</span>
               <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
@@ -107,7 +107,7 @@ export default function HomePage() {
             {plan !== "pro" ? (
               <UpgradeButton
                 label="Upgrade to Pro"
-                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+                className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614] sm:w-auto"
               />
             ) : null}
           </div>
@@ -230,11 +230,11 @@ export default function HomePage() {
             <button
               type="button"
               onClick={openDashboard}
-              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+              className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614] sm:w-auto"
             >
               <span className="relative z-[1]">{user ? "Open Dashboard" : "Try the New Free Plan"}</span>
             </button>
-            {plan !== "pro" ? <UpgradeButton label="Go Pro for $10/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" /> : null}
+            {plan !== "pro" ? <UpgradeButton label="Go Pro for $10/month" className="interactive-pop inline-flex w-full items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto" /> : null}
           </div>
         </div>
       </Reveal>
