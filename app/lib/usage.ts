@@ -4,6 +4,7 @@ import type { PlanKey, StoredSubscription, UsageLimitState } from "./types";
 import { FREE_DAILY_GENERATIONS } from "./site";
 
 const usageKey = "ace-free-usage-v2";
+const legacyUsageKey = "ace-free-usage-v1";
 const planKey = "ace-launch-plan-v1";
 const subscriptionKey = "ace-paystack-subscription-v1";
 const usageScopeKey = "ace-auth-usage-scope-v1";
@@ -33,22 +34,45 @@ function getUsageStorageKey() {
   return `${usageKey}:${getUsageScope()}`;
 }
 
+function getGuestUsageStorageKey() {
+  return `${usageKey}:guest`;
+}
+
+function getScopedUsageStorageKey(scope: string) {
+  return `${usageKey}:${scope}`;
+}
+
+function normalizeUsageCount(value: unknown) {
+  return Number.isFinite(value) ? Math.max(0, Number(value)) : 0;
+}
+
+function getUsageCountFromRaw(raw: string | null) {
+  if (!raw) {
+    return 0;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<UsageLimitState>;
+    return normalizeUsageCount(parsed.count);
+  } catch {
+    return 0;
+  }
+}
+
 function getLegacyUsageCount() {
   if (typeof window === "undefined") {
     return 0;
   }
 
-  const legacyRaw = window.localStorage.getItem("ace-free-usage-v1");
-  if (!legacyRaw) {
+  return getUsageCountFromRaw(window.localStorage.getItem(legacyUsageKey));
+}
+
+function getStoredUsageCount(storageKey: string) {
+  if (typeof window === "undefined") {
     return 0;
   }
 
-  try {
-    const parsed = JSON.parse(legacyRaw) as Partial<{ count: number }>;
-    return Number.isFinite(parsed.count) ? Math.max(0, Number(parsed.count)) : 0;
-  } catch {
-    return 0;
-  }
+  return getUsageCountFromRaw(window.localStorage.getItem(storageKey));
 }
 
 function getFreshUsageState(): UsageLimitState {
@@ -73,7 +97,7 @@ export function getUsageState(): UsageLimitState {
   try {
     const parsed = JSON.parse(raw) as Partial<UsageLimitState>;
     const nextState: UsageLimitState = {
-      count: Number.isFinite(parsed.count) ? Math.max(0, Number(parsed.count)) : 0,
+      count: normalizeUsageCount(parsed.count),
     };
 
     window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(nextState));
@@ -88,6 +112,18 @@ export function getUsageState(): UsageLimitState {
 export function getRemainingFreeGenerations() {
   const state = getUsageState();
   return Math.max(0, FREE_DAILY_GENERATIONS - state.count);
+}
+
+export function getHighestStoredUsageCount(scope?: string | null) {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  const scopedCount = scope ? getStoredUsageCount(getScopedUsageStorageKey(scope)) : getStoredUsageCount(getUsageStorageKey());
+  const guestCount = getStoredUsageCount(getGuestUsageStorageKey());
+  const legacyCount = getLegacyUsageCount();
+
+  return Math.max(scopedCount, guestCount, legacyCount);
 }
 
 export function incrementFreeGeneration() {
@@ -114,6 +150,15 @@ export function setUsageStateCount(count: number) {
   };
 
   window.localStorage.setItem(getUsageStorageKey(), JSON.stringify(nextState));
+}
+
+export function clearLegacyUsageState() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(getGuestUsageStorageKey());
+  window.localStorage.removeItem(legacyUsageKey);
 }
 
 export function setUsageAccountScope(uid: string | null) {

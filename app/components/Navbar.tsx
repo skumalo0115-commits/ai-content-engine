@@ -154,6 +154,13 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               </div>
             ) : null}
             {usageLabel ? <div className="rounded-[1.1rem] border border-black/6 bg-white/80 px-4 py-3 text-sm text-[#585148]">{usageLabel}</div> : null}
+            {plan !== "pro" ? (
+              <UpgradeButton
+                label="Upgrade to Pro"
+                compact
+                className="interactive-pop inline-flex w-full items-center justify-center rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+              />
+            ) : null}
             {navLinks.map((link) => (
               <button
                 key={link.href}
@@ -188,13 +195,6 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               >
                 Start Free
               </button>
-            ) : null}
-            {plan !== "pro" ? (
-              <UpgradeButton
-                label="Upgrade to Pro"
-                compact
-                className="interactive-pop inline-flex w-full items-center justify-center rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
-              />
             ) : null}
             {user ? (
               <>

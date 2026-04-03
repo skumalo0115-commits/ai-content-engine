@@ -11,10 +11,11 @@ import {
   updateProfile as updateFirebaseProfile,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
+import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile, updateAccountUsageCount } from "@/app/lib/account-store";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
-import { clearAllStoredBillingState, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearLegacyUsageState, getHighestStoredUsageCount, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope, setUsageStateCount } from "@/app/lib/usage";
+import { hydrateSavedStrategies } from "@/app/lib/saved-content";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -344,6 +345,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
             const nextStoredSubscription = record.subscription;
+            const localUsageCount = getHighestStoredUsageCount(nextFirebaseUser.uid);
+            const nextUsageCount = Math.max(record.usageCount, localUsageCount);
+
+            setUsageStateCount(nextUsageCount);
+
+            if (localUsageCount > record.usageCount) {
+              void updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount)
+                .then(() => clearLegacyUsageState())
+                .catch(() => undefined);
+            } else if (nextUsageCount > 0) {
+              clearLegacyUsageState();
+            }
+
+            void hydrateSavedStrategies(record.savedContent).catch(() => undefined);
 
             if (nextStoredSubscription?.customerId) {
               setStoredPlan("free");

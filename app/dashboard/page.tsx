@@ -14,7 +14,7 @@ import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
-import { clearAllStoredBillingState, clearStoredSubscription, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearLegacyUsageState, clearStoredSubscription, getHighestStoredUsageCount, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 
@@ -222,14 +222,18 @@ function DashboardPageInner() {
           return;
         }
 
-        const localUsageCount = getUsageState().count;
+        const localUsageCount = getHighestStoredUsageCount(user.uid);
+        const nextUsageCount = Math.max(record.usageCount, localUsageCount);
 
-        if (record.usageCount === 0 && localUsageCount > 0) {
-          setAccountUsageCount(localUsageCount);
-          void updateAccountUsageCount(user.uid, localUsageCount);
-        } else {
-          setAccountUsageCount(record.usageCount);
-          setUsageStateCount(record.usageCount);
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+
+        if (localUsageCount > record.usageCount) {
+          void updateAccountUsageCount(user.uid, localUsageCount)
+            .then(() => clearLegacyUsageState())
+            .catch(() => undefined);
+        } else if (nextUsageCount > 0) {
+          clearLegacyUsageState();
         }
 
         void hydrateSavedStrategies(record.savedContent).then((entries) => {
