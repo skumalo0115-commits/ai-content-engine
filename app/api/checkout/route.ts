@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/app/lib/site";
-import { initializePaystackCheckout, isPaystackConfigured } from "@/app/lib/paystack";
+import { getPaystackPlanCode, getPaystackSecretKeyMode, initializePaystackCheckout, isPaystackConfigured } from "@/app/lib/paystack";
 
 export const runtime = "nodejs";
 
@@ -55,9 +55,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.authorization_url, reference: session.reference });
   } catch (error) {
     console.error("Paystack checkout initialization failed:", error);
+    const planCode = getPaystackPlanCode();
+    const paystackMode = getPaystackSecretKeyMode();
+    const baseMessage = error instanceof Error ? error.message : "Checkout could not be created right now. Please try again in a moment.";
+    const isInvalidPlanError = /plan id\/code specified is invalid/i.test(baseMessage);
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Checkout could not be created right now. Please try again in a moment.",
+        error: isInvalidPlanError
+          ? `Paystack rejected plan code ${planCode} while using the ${paystackMode} secret key. Make sure the plan exists in that same Paystack mode and account.`
+          : baseMessage,
       },
       { status: 500 },
     );
