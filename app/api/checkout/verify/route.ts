@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     const subscriptionCustomer =
       latestSubscription?.customer && typeof latestSubscription.customer === "object" ? latestSubscription.customer : null;
     const subscriptionStatus = normalizeStatus(activeSubscription?.status || latestSubscription?.status || transaction.status);
-    const isActive = isSuccessfulCharge && looksLikeExpectedCheckout && Boolean(activeSubscription);
+    const isActive = isSuccessfulCharge && looksLikeExpectedCheckout && Boolean(activeSubscription) && Boolean(accountUid);
     const isPending = looksLikeExpectedCheckout && !isActive;
 
     if (isActive && email) {

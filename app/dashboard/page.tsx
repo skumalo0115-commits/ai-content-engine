@@ -14,7 +14,7 @@ import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
-import { clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 
@@ -95,7 +95,12 @@ function DashboardPageInner() {
   });
 
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
+    if (!user) {
+      return;
+    }
+
     let didActivate = false;
+    let shouldShowPendingNotice = true;
 
     try {
       for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -115,7 +120,14 @@ function DashboardPageInner() {
           error?: string;
         };
 
-        if (response.ok && data.active && typeof data.customerId === "string" && typeof data.status === "string") {
+        if (
+          response.ok &&
+          data.active &&
+          typeof data.customerId === "string" &&
+          typeof data.status === "string" &&
+          typeof data.accountUid === "string" &&
+          data.accountUid === user.uid
+        ) {
           const nextSubscription = {
             provider: "paystack" as const,
             customerId: data.customerId,
@@ -148,16 +160,28 @@ function DashboardPageInner() {
           break;
         }
 
+        if (response.ok && data.active && data.accountUid && data.accountUid !== user.uid) {
+          clearAllStoredBillingState();
+          setPlan("free");
+          setError("This checkout belongs to a different account. Please sign in with the account that started the payment.");
+          shouldShowPendingNotice = false;
+          break;
+        }
+
         if (!data.pending) {
+          clearAllStoredBillingState();
+          setPlan("free");
           throw new Error(data.error || "Your payment was approved, but Pro could not be unlocked yet.");
         }
 
         await waitFor(1200 * (attempt + 1));
       }
 
-      if (!didActivate) {
+      if (!didActivate && shouldShowPendingNotice) {
         setError("Your payment is still syncing with Paystack. Please refresh the dashboard in a few seconds if Pro does not appear yet.");
       }
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : "Your payment could not be verified.");
     } finally {
       router.replace("/dashboard");
     }
@@ -183,7 +207,7 @@ function DashboardPageInner() {
     const sessionId = searchParams.get("reference") || searchParams.get("trxref");
     const checkoutState = searchParams.get("checkout");
 
-    if (sessionId && isAuthReady) {
+    if (sessionId && isAuthReady && user) {
       void verifyCheckout(sessionId);
       return;
     }
@@ -193,11 +217,12 @@ function DashboardPageInner() {
     }
 
     if (checkoutState === "cancelled") {
+      clearAllStoredBillingState();
       clearStoredSubscription();
       setStoredPlan("free");
       syncClientState();
     }
-  }, [isAuthReady, searchParams]);
+  }, [isAuthReady, searchParams, user]);
 
   const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;

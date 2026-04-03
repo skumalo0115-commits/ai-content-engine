@@ -14,7 +14,7 @@ import {
 import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
-import { clearStoredSubscription, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
+import { clearAllStoredBillingState, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         if (response.status >= 400 && response.status < 500) {
-          clearStoredSubscription();
+          clearAllStoredBillingState();
           setStoredPlan("free");
           subscriptionSyncRef.current = null;
           await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
@@ -247,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!data.active) {
-        clearStoredSubscription();
+        clearAllStoredBillingState();
         setStoredPlan("free");
         subscriptionSyncRef.current = null;
         await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
@@ -309,7 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUsageAccountScope(nextFirebaseUser?.uid || null);
 
           if (!nextFirebaseUser) {
-            clearStoredSubscription();
+            clearAllStoredBillingState();
             setStoredPlan("free");
             subscriptionSyncRef.current = null;
             setUser(null);
@@ -318,7 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           const fallbackUser = toAuthUser(nextFirebaseUser);
-          clearStoredSubscription();
+          clearAllStoredBillingState();
           setStoredPlan("free");
           subscriptionSyncRef.current = null;
           setUser(fallbackUser);
@@ -354,7 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
               setStoredPlan("free");
               subscriptionSyncRef.current = null;
-              clearStoredSubscription();
+              clearAllStoredBillingState();
             }
             setUser(nextUserWithProfile);
           });
@@ -388,7 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (authenticatedFirebaseUser: FirebaseUser) => {
       const nextUser = toAuthUser(authenticatedFirebaseUser);
       setUsageAccountScope(authenticatedFirebaseUser.uid);
-      clearStoredSubscription();
+      clearAllStoredBillingState();
       setStoredPlan("free");
       subscriptionSyncRef.current = null;
       setUser(nextUser);
@@ -448,6 +448,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(firebaseAuth);
       }
     } finally {
+      clearAllStoredBillingState();
       setUsageAccountScope(null);
       setUser(null);
       router.push("/");
