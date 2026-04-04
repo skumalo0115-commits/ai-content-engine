@@ -13,7 +13,7 @@ import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
-import { syncAccountStateToServer } from "@/app/lib/account-sync";
+import { fetchAccountStateFromServer, syncAccountStateToServer } from "@/app/lib/account-sync";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { clearAllStoredBillingState, clearLegacyUsageState, clearStoredSubscription, getHighestStoredUsageCount, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
@@ -208,7 +208,42 @@ function DashboardPageInner() {
       return;
     }
 
-    return subscribeToAccountRecord(
+    let isCancelled = false;
+
+    void fetchAccountStateFromServer()
+      .then((result) => {
+        if (isCancelled || !result?.record) {
+          return;
+        }
+
+        const remoteRecord = result.record;
+        const localUsageCount = getHighestStoredUsageCount(user.uid);
+        const nextUsageCount = Math.max(remoteRecord.usageCount, localUsageCount);
+
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+
+        if (localUsageCount > remoteRecord.usageCount) {
+          void syncAccountStateToServer({ usageCount: localUsageCount })
+            .catch(() => updateAccountUsageCount(user.uid, localUsageCount))
+            .then(() => clearLegacyUsageState())
+            .catch(() => undefined);
+        } else if (nextUsageCount > 0) {
+          clearLegacyUsageState();
+        }
+
+        void hydrateSavedStrategies(remoteRecord.savedContent).then((entries) => {
+          if (isCancelled) {
+            return;
+          }
+
+          setSavedStrategies(entries);
+          setExpandedSavedId((currentId) => (currentId && entries.some((item) => item.id === currentId) ? currentId : null));
+        });
+      })
+      .catch(() => undefined);
+
+    const unsubscribe = subscribeToAccountRecord(
       user.uid,
       {
         firstName: user.firstName,
@@ -244,6 +279,11 @@ function DashboardPageInner() {
         });
       },
     );
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+    };
   }, [user]);
 
   useEffect(() => {

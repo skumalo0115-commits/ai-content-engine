@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb, isFirebaseAdminConfigured } from "@/app/lib/firebase-admin";
-import type { AccountProfile, GeneratedCalendar, GeneratePayload, GeneratedStrategy, SavedStrategy } from "@/app/lib/types";
+import type { AccountProfile, AccountRecord, GeneratedCalendar, GeneratePayload, GeneratedStrategy, SavedStrategy, StoredSubscription } from "@/app/lib/types";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,10 @@ function normalizeString(value: unknown) {
 
 function normalizeCount(value: unknown) {
   return Number.isFinite(value) ? Math.max(0, Number(value)) : 0;
+}
+
+function normalizePlan(value: unknown) {
+  return value === "pro" ? "pro" : "free";
 }
 
 function isGeneratedStrategy(value: unknown): value is GeneratedStrategy {
@@ -87,6 +91,68 @@ function buildFallbackProfile(decodedToken: { name?: string; email?: string }) {
   return fallbackProfile;
 }
 
+function normalizeProfile(value: unknown, fallbackProfile: AccountProfile): AccountProfile {
+  if (!value || typeof value !== "object") {
+    return fallbackProfile;
+  }
+
+  const candidate = value as Partial<AccountProfile>;
+
+  return {
+    firstName: normalizeString(candidate.firstName) || fallbackProfile.firstName,
+    lastName: normalizeString(candidate.lastName) || fallbackProfile.lastName,
+    email: normalizeString(candidate.email) || fallbackProfile.email,
+    company: normalizeString(candidate.company) || fallbackProfile.company,
+    role: normalizeString(candidate.role) || fallbackProfile.role,
+  };
+}
+
+function normalizeSubscription(value: unknown): StoredSubscription | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Partial<StoredSubscription>;
+
+  if (candidate.provider !== "paystack" || typeof candidate.customerId !== "string" || typeof candidate.status !== "string") {
+    return null;
+  }
+
+  return {
+    provider: "paystack",
+    customerId: candidate.customerId,
+    customerCode: typeof candidate.customerCode === "string" ? candidate.customerCode : undefined,
+    subscriptionCode: typeof candidate.subscriptionCode === "string" ? candidate.subscriptionCode : undefined,
+    email: typeof candidate.email === "string" ? candidate.email : undefined,
+    reference: typeof candidate.reference === "string" ? candidate.reference : undefined,
+    status: candidate.status,
+  };
+}
+
+function normalizeAccountRecord(value: unknown, fallbackProfile: AccountProfile): AccountRecord {
+  if (!value || typeof value !== "object") {
+    return {
+      plan: "free",
+      profile: fallbackProfile,
+      subscription: null,
+      savedContent: [],
+      usageCount: 0,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  const candidate = value as Partial<AccountRecord>;
+
+  return {
+    plan: normalizePlan(candidate.plan),
+    profile: normalizeProfile(candidate.profile, fallbackProfile),
+    subscription: normalizeSubscription(candidate.subscription),
+    savedContent: normalizeSavedContent(candidate.savedContent),
+    usageCount: normalizeCount(candidate.usageCount),
+    updatedAt: normalizeString(candidate.updatedAt) || new Date().toISOString(),
+  };
+}
+
 function getBearerToken(request: Request) {
   const authorization = request.headers.get("authorization") || "";
 
@@ -148,5 +214,33 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Account sync failed:", error);
     return NextResponse.json({ ok: false, error: "Account sync failed." }, { status: 401 });
+  }
+}
+
+export async function GET(request: Request) {
+  if (!isFirebaseAdminConfigured() || !adminDb || !adminAuth) {
+    return NextResponse.json({ ok: false, error: "Firebase admin is not configured." }, { status: 503 });
+  }
+
+  const idToken = getBearerToken(request);
+
+  if (!idToken) {
+    return NextResponse.json({ ok: false, error: "Missing auth token." }, { status: 401 });
+  }
+
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const fallbackProfile = buildFallbackProfile({ name: decodedToken.name, email: decodedToken.email });
+    const accountRef = adminDb.collection("accounts").doc(decodedToken.uid);
+    const accountSnapshot = await accountRef.get();
+    const record = normalizeAccountRecord(accountSnapshot.data(), fallbackProfile);
+
+    return NextResponse.json({
+      ok: true,
+      record,
+    });
+  } catch (error) {
+    console.error("Account fetch failed:", error);
+    return NextResponse.json({ ok: false, error: "Account fetch failed." }, { status: 401 });
   }
 }

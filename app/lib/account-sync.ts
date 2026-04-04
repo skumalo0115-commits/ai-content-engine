@@ -1,7 +1,7 @@
 "use client";
 
 import { firebaseAuth } from "./firebase";
-import type { SavedStrategy } from "./types";
+import type { AccountRecord, SavedStrategy } from "./types";
 
 type SyncPayload = {
   savedContent?: SavedStrategy[];
@@ -13,13 +13,12 @@ type TokenCapableUser = {
 };
 
 export async function syncAccountStateToServer(payload: SyncPayload) {
-  const currentUser = firebaseAuth?.currentUser;
+  const idToken = await getCurrentIdToken();
 
-  if (!currentUser) {
+  if (!idToken) {
     return null;
   }
 
-  const idToken = await (currentUser as unknown as TokenCapableUser).getIdToken();
   const response = await fetch("/api/account/sync", {
     method: "POST",
     headers: {
@@ -35,4 +34,37 @@ export async function syncAccountStateToServer(payload: SyncPayload) {
   }
 
   return (await response.json()) as { ok: true; usageCount?: number; savedCount?: number | null };
+}
+
+export async function fetchAccountStateFromServer() {
+  const idToken = await getCurrentIdToken();
+
+  if (!idToken) {
+    return null;
+  }
+
+  const response = await fetch("/api/account/sync", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error || "Could not load your account state.");
+  }
+
+  return (await response.json()) as { ok: true; record: AccountRecord };
+}
+
+async function getCurrentIdToken() {
+  const currentUser = firebaseAuth?.currentUser;
+
+  if (!currentUser) {
+    return null;
+  }
+
+  return (currentUser as unknown as TokenCapableUser).getIdToken();
 }
