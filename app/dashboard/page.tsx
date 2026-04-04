@@ -211,13 +211,31 @@ function DashboardPageInner() {
     let isCancelled = false;
 
     void fetchAccountStateFromServer()
-      .then((result) => {
+      .then(async (initialResult) => {
+        const localSavedStrategies = getSavedStrategies();
+        const localUsageCount = getHighestStoredUsageCount(user.uid);
+
+        if (localSavedStrategies.length > 0 || localUsageCount > 0) {
+          const syncPayload: { savedContent?: SavedStrategy[]; usageCount?: number } = {};
+
+          if (localSavedStrategies.length > 0) {
+            syncPayload.savedContent = localSavedStrategies;
+          }
+
+          if (localUsageCount > 0) {
+            syncPayload.usageCount = localUsageCount;
+          }
+
+          await syncAccountStateToServer(syncPayload).catch(() => undefined);
+        }
+
+        const result = localSavedStrategies.length > 0 || localUsageCount > 0 ? await fetchAccountStateFromServer().catch(() => initialResult) : initialResult;
+
         if (isCancelled || !result?.record) {
           return;
         }
 
         const remoteRecord = result.record;
-        const localUsageCount = getHighestStoredUsageCount(user.uid);
         const nextUsageCount = Math.max(remoteRecord.usageCount, localUsageCount);
 
         setAccountUsageCount(nextUsageCount);

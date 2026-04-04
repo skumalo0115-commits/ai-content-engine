@@ -16,7 +16,7 @@ import { syncAccountStateToServer } from "@/app/lib/account-sync";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
 import { clearAllStoredBillingState, clearLegacyUsageState, getHighestStoredUsageCount, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope, setUsageStateCount } from "@/app/lib/usage";
-import { hydrateSavedStrategies } from "@/app/lib/saved-content";
+import { getSavedStrategies, hydrateSavedStrategies } from "@/app/lib/saved-content";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -346,14 +346,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
             const nextStoredSubscription = record.subscription;
+            const localSavedStrategies = getSavedStrategies();
             const localUsageCount = getHighestStoredUsageCount(nextFirebaseUser.uid);
             const nextUsageCount = Math.max(record.usageCount, localUsageCount);
 
             setUsageStateCount(nextUsageCount);
 
-            if (localUsageCount > record.usageCount) {
-              void syncAccountStateToServer({ usageCount: localUsageCount })
-                .catch(() => updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount))
+            if (localSavedStrategies.length > 0 || localUsageCount > record.usageCount) {
+              const syncPayload: { savedContent?: ReturnType<typeof getSavedStrategies>; usageCount?: number } = {};
+
+              if (localSavedStrategies.length > 0) {
+                syncPayload.savedContent = localSavedStrategies;
+              }
+
+              if (localUsageCount > record.usageCount) {
+                syncPayload.usageCount = localUsageCount;
+              }
+
+              void syncAccountStateToServer(syncPayload)
+                .catch(() => (localUsageCount > record.usageCount ? updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount) : Promise.resolve()))
                 .then(() => clearLegacyUsageState())
                 .catch(() => undefined);
             } else if (nextUsageCount > 0) {
