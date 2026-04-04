@@ -5,6 +5,8 @@ import type { AccountProfile, AccountRecord, GeneratedCalendar, GeneratePayload,
 
 export const runtime = "nodejs";
 
+const ACCOUNT_STATE_COLLECTION = "account_state";
+
 function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -75,6 +77,42 @@ function normalizeSavedContent(value: unknown): SavedStrategy[] {
   });
 }
 
+function getStrategySignature(entry: SavedStrategy) {
+  return JSON.stringify({
+    businessType: entry.brief.businessType.trim().toLowerCase(),
+    targetAudience: entry.brief.targetAudience.trim().toLowerCase(),
+    goal: entry.brief.goal.trim().toLowerCase(),
+    title: entry.strategy.title.trim(),
+    overview: entry.strategy.overview.trim(),
+    instagramPlan: entry.strategy.instagramPlan.trim(),
+    tiktokPlan: entry.strategy.tiktokPlan.trim(),
+    facebookLinkedInPlan: entry.strategy.facebookLinkedInPlan.trim(),
+    hashtagPlan: entry.strategy.hashtagPlan.trim(),
+    fiveDayPlan: entry.strategy.fiveDayPlan,
+    videoRecommendations: entry.strategy.videoRecommendations,
+  });
+}
+
+function mergeSavedContent(primaryEntries: SavedStrategy[], secondaryEntries: SavedStrategy[]) {
+  const mergedEntries: SavedStrategy[] = [];
+  const seenIds = new Set<string>();
+  const seenSignatures = new Set<string>();
+
+  for (const entry of [...primaryEntries, ...secondaryEntries]) {
+    const signature = getStrategySignature(entry);
+
+    if (seenIds.has(entry.id) || seenSignatures.has(signature)) {
+      continue;
+    }
+
+    seenIds.add(entry.id);
+    seenSignatures.add(signature);
+    mergedEntries.push(entry);
+  }
+
+  return mergedEntries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}
+
 function buildFallbackProfile(decodedToken: { name?: string; email?: string }) {
   const nameParts = normalizeString(decodedToken.name).split(/\s+/).filter(Boolean);
   const firstName = nameParts[0] || "Jonny";
@@ -89,6 +127,11 @@ function buildFallbackProfile(decodedToken: { name?: string; email?: string }) {
   };
 
   return fallbackProfile;
+}
+
+function getAccountStateKey(email: string | null | undefined, uid: string) {
+  const normalizedEmail = normalizeString(email).toLowerCase();
+  return normalizedEmail || `uid:${uid}`;
 }
 
 function normalizeProfile(value: unknown, fallbackProfile: AccountProfile): AccountProfile {
@@ -176,40 +219,51 @@ export async function POST(request: Request) {
 
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const fallbackProfile = buildFallbackProfile({ name: decodedToken.name, email: decodedToken.email });
     const payload = (await request.json()) as Partial<{ savedContent: unknown; usageCount: unknown }>;
     const accountRef = adminDb.collection("accounts").doc(decodedToken.uid);
-    const accountSnapshot = await accountRef.get();
-    const existingData = (accountSnapshot.data() || {}) as Partial<{ usageCount: number }>;
-    const nextSavedContent = "savedContent" in payload ? normalizeSavedContent(payload.savedContent) : undefined;
+    const accountStateRef = adminDb.collection(ACCOUNT_STATE_COLLECTION).doc(getAccountStateKey(decodedToken.email, decodedToken.uid));
+    const [accountSnapshot, accountStateSnapshot] = await Promise.all([accountRef.get(), accountStateRef.get()]);
+    const uidRecord = normalizeAccountRecord(accountSnapshot.data(), fallbackProfile);
+    const canonicalRecord = normalizeAccountRecord(accountStateSnapshot.data(), fallbackProfile);
+    const nextSavedContentInput = "savedContent" in payload ? normalizeSavedContent(payload.savedContent) : undefined;
     const nextUsageCount = "usageCount" in payload ? normalizeCount(payload.usageCount) : undefined;
-    const patch: Record<string, unknown> = {
+    const mergedSavedContent = typeof nextSavedContentInput !== "undefined"
+      ? mergeSavedContent(mergeSavedContent(canonicalRecord.savedContent, uidRecord.savedContent), nextSavedContentInput)
+      : mergeSavedContent(canonicalRecord.savedContent, uidRecord.savedContent);
+    const mergedUsageCount = typeof nextUsageCount === "number"
+      ? Math.max(canonicalRecord.usageCount, uidRecord.usageCount, nextUsageCount)
+      : Math.max(canonicalRecord.usageCount, uidRecord.usageCount);
+    const mergedRecord: AccountRecord = {
+      plan: uidRecord.plan === "pro" || canonicalRecord.plan === "pro" ? "pro" : "free",
+      profile: normalizeProfile(uidRecord.profile, canonicalRecord.profile),
+      subscription: uidRecord.subscription || canonicalRecord.subscription,
+      savedContent: mergedSavedContent,
+      usageCount: mergedUsageCount,
       updatedAt: new Date().toISOString(),
     };
+    const canonicalPatch = {
+      ...mergedRecord,
+      email: normalizeString(decodedToken.email).toLowerCase(),
+      uid: decodedToken.uid,
+      lastSyncedAt: FieldValue.serverTimestamp(),
+    };
 
-    if (!accountSnapshot.exists) {
-      patch.plan = "free";
-      patch.profile = buildFallbackProfile({ name: decodedToken.name, email: decodedToken.email });
-      patch.subscription = null;
-    }
-
-    if (nextSavedContent) {
-      patch.savedContent = nextSavedContent;
-    }
-
-    if (typeof nextUsageCount === "number") {
-      patch.usageCount = Math.max(normalizeCount(existingData.usageCount), nextUsageCount);
-    }
-
-    if (Object.keys(patch).length === 1) {
-      patch.lastSyncedAt = FieldValue.serverTimestamp();
-    }
-
-    await accountRef.set(patch, { merge: true });
+    await Promise.all([
+      accountStateRef.set(canonicalPatch, { merge: true }),
+      accountRef.set(
+        {
+          ...mergedRecord,
+          lastSyncedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      ),
+    ]);
 
     return NextResponse.json({
       ok: true,
-      usageCount: patch.usageCount ?? normalizeCount(existingData.usageCount),
-      savedCount: Array.isArray(patch.savedContent) ? patch.savedContent.length : null,
+      usageCount: mergedRecord.usageCount,
+      savedCount: mergedRecord.savedContent.length,
     });
   } catch (error) {
     console.error("Account sync failed:", error);
@@ -232,8 +286,37 @@ export async function GET(request: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const fallbackProfile = buildFallbackProfile({ name: decodedToken.name, email: decodedToken.email });
     const accountRef = adminDb.collection("accounts").doc(decodedToken.uid);
-    const accountSnapshot = await accountRef.get();
-    const record = normalizeAccountRecord(accountSnapshot.data(), fallbackProfile);
+    const accountStateRef = adminDb.collection(ACCOUNT_STATE_COLLECTION).doc(getAccountStateKey(decodedToken.email, decodedToken.uid));
+    const [accountSnapshot, accountStateSnapshot] = await Promise.all([accountRef.get(), accountStateRef.get()]);
+    const uidRecord = normalizeAccountRecord(accountSnapshot.data(), fallbackProfile);
+    const canonicalRecord = normalizeAccountRecord(accountStateSnapshot.data(), fallbackProfile);
+    const record: AccountRecord = {
+      plan: uidRecord.plan === "pro" || canonicalRecord.plan === "pro" ? "pro" : "free",
+      profile: normalizeProfile(uidRecord.profile, canonicalRecord.profile),
+      subscription: uidRecord.subscription || canonicalRecord.subscription,
+      savedContent: mergeSavedContent(canonicalRecord.savedContent, uidRecord.savedContent),
+      usageCount: Math.max(canonicalRecord.usageCount, uidRecord.usageCount),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await Promise.all([
+      accountStateRef.set(
+        {
+          ...record,
+          email: normalizeString(decodedToken.email).toLowerCase(),
+          uid: decodedToken.uid,
+          lastSyncedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      ),
+      accountRef.set(
+        {
+          ...record,
+          lastSyncedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      ),
+    ]);
 
     return NextResponse.json({
       ok: true,
