@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { BookmarkIcon } from "@/app/components/Icons";
+import { BookmarkIcon, PinIcon } from "@/app/components/Icons";
 import type { GeneratedStrategy, VideoRecommendation } from "@/app/lib/types";
 
 type GeneratedStrategyCardProps = {
@@ -15,6 +15,9 @@ type GeneratedStrategyCardProps = {
   onSave?: () => void;
   saveLabel?: string;
   isSaveDisabled?: boolean;
+  showPinnedBadge?: boolean;
+  onReset?: () => void;
+  resetLabel?: string;
 };
 
 function TypedText({ text, className }: { text: string; className?: string }) {
@@ -67,6 +70,9 @@ export function GeneratedStrategyCard({
   onSave,
   saveLabel = "Save",
   isSaveDisabled = false,
+  showPinnedBadge = false,
+  onReset,
+  resetLabel = "Reset output",
 }: GeneratedStrategyCardProps) {
   const [activeVideo, setActiveVideo] = useState<VideoRecommendation | null>(null);
 
@@ -93,7 +99,15 @@ export function GeneratedStrategyCard({
           <div className="space-y-4 border-b border-white/10 pb-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0 space-y-4">
-                {eyebrow ? <p className="text-[11px] uppercase tracking-[0.28em] text-white/55">{eyebrow}</p> : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {eyebrow ? <p className="text-[11px] uppercase tracking-[0.28em] text-white/55">{eyebrow}</p> : null}
+                  {showPinnedBadge ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/78">
+                      <PinIcon className="h-3 w-3" />
+                      Pinned
+                    </span>
+                  ) : null}
+                </div>
                 <h2 className="max-w-3xl break-words text-2xl font-semibold tracking-tight text-white sm:text-3xl">{strategy.title}</h2>
               </div>
               {showSaveButton && !isLocked ? (
@@ -176,6 +190,18 @@ export function GeneratedStrategyCard({
                 </div>
               </div>
             </>
+          ) : null}
+
+          {onReset ? (
+            <div className="border-t border-white/10 pt-6">
+              <button
+                type="button"
+                onClick={onReset}
+                className="inline-flex w-full items-center justify-center rounded-full border border-white/14 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08] sm:w-auto"
+              >
+                {resetLabel}
+              </button>
+            </div>
           ) : null}
         </div>
 

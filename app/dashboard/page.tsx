@@ -15,6 +15,7 @@ import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
 import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { saveGeneratedCalendar } from "@/app/lib/saved-content";
 import { fetchAccountStateFromServer, syncAccountStateToServer } from "@/app/lib/account-sync";
+import { clearPinnedDashboardOutput, getPinnedDashboardOutput, setPinnedDashboardOutput } from "@/app/lib/pinned-output";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
 import { clearAllStoredBillingState, clearLegacyUsageState, clearStoredSubscription, getHighestStoredUsageCount, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
@@ -83,12 +84,25 @@ function DashboardPageInner() {
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
   const [showMobileScrollHint, setShowMobileScrollHint] = useState(false);
+  const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
     setPlan(nextPlan);
     const nextSaved = getSavedStrategies();
+    const nextPinnedOutput = getPinnedDashboardOutput();
     setSavedStrategies(nextSaved);
+    if (nextPinnedOutput) {
+      setStrategy(nextPinnedOutput.strategy);
+      setLastBrief(nextPinnedOutput.brief);
+      setSourceLabel(nextPinnedOutput.sourceLabel);
+      setHasPinnedOutput(true);
+    } else {
+      setStrategy(starterStrategy);
+      setLastBrief(null);
+      setSourceLabel("Platform playbook");
+      setHasPinnedOutput(false);
+    }
     setExpandedSavedId((currentId) => {
       if (currentId && nextSaved.some((item) => item.id === currentId)) {
         return currentId;
@@ -377,6 +391,16 @@ function DashboardPageInner() {
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
   const currentStrategyAlreadySaved = lastBrief ? hasSavedStrategy({ brief: lastBrief, strategy }) : false;
 
+  function handleResetGeneratedOutput() {
+    clearPinnedDashboardOutput();
+    setStrategy(starterStrategy);
+    setLastBrief(null);
+    setSourceLabel("Platform playbook");
+    setHasPinnedOutput(false);
+    setError(null);
+    setActiveView("generate");
+  }
+
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
     setActiveView("generate");
@@ -404,6 +428,8 @@ function DashboardPageInner() {
         throw new Error(data.error || "Could not generate content right now.");
       }
 
+      const nextSourceLabel = `Live AI: ${data.meta?.model || "OpenRouter"}`;
+
       if (plan !== "pro" && user) {
         const nextUsageCount = accountUsageCount + 1;
         setAccountUsageCount(nextUsageCount);
@@ -415,8 +441,14 @@ function DashboardPageInner() {
 
       startTransition(() => {
         setStrategy(data.strategy);
-        setSourceLabel(`Live AI: ${data.meta?.model || "OpenRouter"}`);
+        setSourceLabel(nextSourceLabel);
       });
+      setPinnedDashboardOutput({
+        brief: payload,
+        strategy: data.strategy,
+        sourceLabel: nextSourceLabel,
+      });
+      setHasPinnedOutput(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate content right now.");
     } finally {
@@ -594,6 +626,9 @@ function DashboardPageInner() {
                   onSave={() => void handleSaveStrategy()}
                   saveLabel={currentStrategyAlreadySaved ? "Already saved" : "Save to Saved Content"}
                   isSaveDisabled={currentStrategyAlreadySaved}
+                  showPinnedBadge={!isLocked && hasPinnedOutput}
+                  onReset={!isLocked && hasPinnedOutput ? handleResetGeneratedOutput : undefined}
+                  resetLabel="Reset output"
                 />
               </section>
             </>

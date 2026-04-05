@@ -223,3 +223,11 @@ export function ChevronDownIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function PinIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m15 4 5 5-3 1-2 5-2-2-4 7-1-1 7-4-2-2 5-2 1-3Z" />
+    </BaseIcon>
+  );
+}
