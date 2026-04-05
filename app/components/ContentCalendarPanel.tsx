@@ -23,10 +23,9 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
     }
 
     const updateHint = () => {
-      const isMobile = window.innerWidth < 640;
       const target = scrollRef.current;
 
-      if (!isMobile || !target) {
+      if (!target) {
         setShowScrollHint(false);
         return;
       }

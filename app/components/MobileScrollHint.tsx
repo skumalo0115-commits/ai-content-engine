@@ -12,16 +12,16 @@ export function MobileScrollHint({ label = "Scroll down", className = "" }: Mobi
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: [0.35, 1, 0.35], y: [8, 0, 8] }}
       exit={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.28, ease: "easeOut" }}
-      className={`pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 sm:hidden ${className}`}
+      transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.35, ease: "easeInOut" }}
+      className={`pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 ${className}`}
     >
       <div className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-[rgba(24,22,20,0.88)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_12px_28px_rgba(0,0,0,0.2)] backdrop-blur-sm">
         <span>{label}</span>
         <motion.span
-          animate={{ y: [0, 4, 0] }}
-          transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.2, ease: "easeInOut" }}
+          animate={{ y: [0, 5, 0], opacity: [0.55, 1, 0.55] }}
+          transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.1, ease: "easeInOut" }}
           className="inline-flex"
         >
           <ChevronDownIcon className="h-4 w-4" />

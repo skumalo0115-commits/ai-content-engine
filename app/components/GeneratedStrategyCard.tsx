@@ -72,16 +72,19 @@ export function GeneratedStrategyCard({
   isSaveDisabled = false,
   showPinnedBadge = false,
   onReset,
-  resetLabel = "Reset output",
+  resetLabel = "Clear",
 }: GeneratedStrategyCardProps) {
   const [activeVideo, setActiveVideo] = useState<VideoRecommendation | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   function openVideo(video: VideoRecommendation) {
     setActiveVideo(video);
+    setIsVideoLoading(true);
   }
 
   function closeVideo() {
     setActiveVideo(null);
+    setIsVideoLoading(false);
   }
 
   const activeVideoId = activeVideo ? getYouTubeVideoId(activeVideo.url) : null;
@@ -254,11 +257,32 @@ export function GeneratedStrategyCard({
                 </div>
               </div>
 
-              <div className="aspect-video bg-black">
+              <div className="relative aspect-video bg-black">
+                <AnimatePresence>
+                  {isVideoLoading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/72 px-4 text-center text-white"
+                    >
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1, ease: "linear" }}
+                        className="h-8 w-8 rounded-full border-2 border-white/70 border-t-transparent"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold">Video is loading...</p>
+                        <p className="mt-1 text-xs text-white/68">It should start playing in a moment.</p>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
                 <iframe
                   src={activeVideoEmbedUrl}
                   title={activeVideo.title}
                   className="h-full w-full"
+                  onLoad={() => setIsVideoLoading(false)}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen

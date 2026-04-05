@@ -83,7 +83,7 @@ function DashboardPageInner() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
-  const [showMobileScrollHint, setShowMobileScrollHint] = useState(false);
+  const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
 
   const syncClientState = useEffectEvent(() => {
@@ -237,10 +237,9 @@ function DashboardPageInner() {
     }
 
     const updateScrollHint = () => {
-      const isMobile = window.innerWidth < 640;
       const canScroll = document.documentElement.scrollHeight - window.innerHeight > 80;
       const nearTop = window.scrollY < 48;
-      setShowMobileScrollHint(isMobile && !isCalendarOpen && canScroll && nearTop);
+      setShowScrollHint(!isCalendarOpen && canScroll && nearTop);
     };
 
     updateScrollHint();
@@ -641,7 +640,7 @@ function DashboardPageInner() {
                   isSaveDisabled={currentStrategyAlreadySaved}
                   showPinnedBadge={!isLocked && hasPinnedOutput}
                   onReset={!isLocked && hasPinnedOutput ? handleResetGeneratedOutput : undefined}
-                  resetLabel="Reset output"
+                  resetLabel="Clear"
                 />
               </section>
             </>
@@ -803,7 +802,7 @@ function DashboardPageInner() {
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <AnimatePresence>{showMobileScrollHint ? <MobileScrollHint /> : null}</AnimatePresence>
+      <AnimatePresence>{showScrollHint ? <MobileScrollHint /> : null}</AnimatePresence>
     </div>
   );
 }
