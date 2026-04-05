@@ -467,7 +467,7 @@ function DashboardPageInner() {
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
       <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} />
 
-      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 overflow-x-hidden px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
         <Sidebar
           currentPlan={plan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
@@ -503,19 +503,19 @@ function DashboardPageInner() {
 
           {activeView === "generate" && lastBrief ? (
             <div className="rounded-2xl border border-black/6 bg-white/85 p-5">
-              <p className="editorial-label text-xs">Latest brief captured on localhost</p>
+              <p className="editorial-label text-xs">Latest brief captured</p>
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.businessType}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.businessType}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.targetAudience}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.targetAudience}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.goal}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.goal}</p>
                 </div>
               </div>
             </div>
@@ -586,18 +586,18 @@ function DashboardPageInner() {
                     if (isExpanded) {
                       return (
                         <div key={item.id} className="relative">
-                          <div className="absolute right-4 top-4 z-10 flex gap-2">
+                          <div className="relative z-10 mb-4 flex flex-wrap justify-end gap-2 sm:absolute sm:right-4 sm:top-4 sm:mb-0">
                             <button
                               type="button"
                               onClick={() => setExpandedSavedId(null)}
-                              className="rounded-full border border-white/14 bg-black/70 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/85"
+                              className="w-full rounded-full border border-white/14 bg-black/70 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/85 sm:w-auto"
                             >
                               Back
                             </button>
                             <button
                               type="button"
                               onClick={() => void handleDeleteSavedStrategy(item.id)}
-                              className="rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919]"
+                              className="w-full rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919] sm:w-auto"
                             >
                               Delete
                             </button>
@@ -608,17 +608,17 @@ function DashboardPageInner() {
                     }
 
                     return (
-                      <div key={item.id} className="rounded-2xl border border-black/6 bg-white/88 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.05)] transition hover:border-black/12 hover:bg-white">
+                      <div key={item.id} className="rounded-2xl border border-black/6 bg-white/88 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.05)] transition hover:border-black/12 hover:bg-white sm:p-5">
                         <div className="flex flex-col gap-4">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                               <p className="editorial-label text-xs">Selected saved brief</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2 sm:flex-row">
                               <button
                                 type="button"
                                 onClick={() => void handleOpenCalendar(item)}
-                                className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                className={`inline-flex w-full items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
                                   plan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
                                     : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
@@ -629,14 +629,14 @@ function DashboardPageInner() {
                               <button
                                 type="button"
                                 onClick={() => setExpandedSavedId(item.id)}
-                                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
+                                className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto"
                               >
                                 View
                               </button>
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteSavedStrategy(item.id)}
-                                className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3]"
+                                className="inline-flex w-full items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3] sm:w-auto"
                               >
                                 Delete
                               </button>
@@ -646,15 +646,15 @@ function DashboardPageInner() {
                           <div className="grid gap-4 md:grid-cols-3">
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.businessType}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.businessType}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.targetAudience}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.targetAudience}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.goal}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.goal}</p>
                             </div>
                           </div>
                         </div>
