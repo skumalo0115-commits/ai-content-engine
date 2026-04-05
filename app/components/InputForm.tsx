@@ -59,7 +59,7 @@ export function InputForm({
             placeholder={placeholder}
             required
             disabled={isDisabled}
-            className="w-full rounded-[1.2rem] border border-black/8 bg-[#fbfaf7] px-4 py-3 text-sm text-[#181614] placeholder:text-[#9b9288] outline-none transition focus:border-[#20584f]/30 focus:bg-white disabled:cursor-not-allowed disabled:opacity-55"
+            className="w-full rounded-[1.2rem] border border-black/8 bg-[#fbfaf7] px-4 py-3 text-base text-[#181614] placeholder:text-[#9b9288] outline-none transition focus:border-[#20584f]/30 focus:bg-white disabled:cursor-not-allowed disabled:opacity-55 md:text-sm"
           />
         </label>
       ))}
