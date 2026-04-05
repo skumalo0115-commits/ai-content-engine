@@ -267,6 +267,12 @@ export async function saveGeneratedStrategy(entry: { brief: GeneratePayload; str
   return { nextEntry, nextEntries, isDuplicate: false };
 }
 
+export async function replaceSavedStrategies(entries: SavedStrategy[]) {
+  const normalizedEntries = normalizeSavedContent(entries).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  await persistSavedContent(normalizedEntries);
+  return normalizedEntries;
+}
+
 export async function deleteSavedStrategy(id: string) {
   const nextEntries = getSavedStrategies().filter((entry) => entry.id !== id);
   await persistSavedContent(nextEntries);

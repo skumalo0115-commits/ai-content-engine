@@ -12,8 +12,7 @@ import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
-import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, saveGeneratedStrategy } from "@/app/lib/saved-content";
-import { saveGeneratedCalendar } from "@/app/lib/saved-content";
+import { getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, replaceSavedStrategies, saveGeneratedCalendar, saveGeneratedStrategy } from "@/app/lib/saved-content";
 import { fetchAccountStateFromServer, syncAccountStateToServer } from "@/app/lib/account-sync";
 import { clearPinnedDashboardOutput, getPinnedDashboardOutput, setPinnedDashboardOutput } from "@/app/lib/pinned-output";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
@@ -83,6 +82,7 @@ function DashboardPageInner() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
+  const [undoDeleteState, setUndoDeleteState] = useState<{ id: number; entry: SavedStrategy; previousEntries: SavedStrategy[] } | null>(null);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
 
@@ -230,6 +230,18 @@ function DashboardPageInner() {
 
     return () => window.clearTimeout(timeoutId);
   }, [scheduleNotice]);
+
+  useEffect(() => {
+    if (!undoDeleteState || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setUndoDeleteState(null);
+    }, 8000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [undoDeleteState]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -478,12 +490,39 @@ function DashboardPageInner() {
     setActiveView("saved");
   }
 
-  async function handleDeleteSavedStrategy(id: string) {
-    const nextEntries = await deleteSavedStrategy(id);
+  async function handleDeleteSavedStrategy(entry: SavedStrategy) {
+    const previousEntries = savedStrategies;
+    const nextEntries = previousEntries.filter((savedEntry) => savedEntry.id !== entry.id);
+
     setSavedStrategies(nextEntries);
-    setExpandedSavedId((currentId) => (currentId === id ? null : currentId));
-    setCalendarTargetId((currentId) => (currentId === id ? null : currentId));
-    setActiveCalendar((currentCalendar) => (calendarTargetId === id ? null : currentCalendar));
+    setExpandedSavedId((currentId) => (currentId === entry.id ? null : currentId));
+    setCalendarTargetId((currentId) => (currentId === entry.id ? null : currentId));
+    setActiveCalendar((currentCalendar) => (calendarTargetId === entry.id ? null : currentCalendar));
+    setUndoDeleteState({ id: Date.now(), entry, previousEntries });
+
+    try {
+      await replaceSavedStrategies(nextEntries);
+    } catch (deleteError) {
+      setSavedStrategies(previousEntries);
+      setUndoDeleteState(null);
+      setError(deleteError instanceof Error ? deleteError.message : "The saved content could not be deleted right now.");
+    }
+  }
+
+  async function handleUndoDelete() {
+    if (!undoDeleteState) {
+      return;
+    }
+
+    const restoredEntries = undoDeleteState.previousEntries;
+    setSavedStrategies(restoredEntries);
+    setUndoDeleteState(null);
+
+    try {
+      await replaceSavedStrategies(restoredEntries);
+    } catch (restoreError) {
+      setError(restoreError instanceof Error ? restoreError.message : "The saved content could not be restored right now.");
+    }
   }
 
   async function handleOpenCalendar(item: SavedStrategy) {
@@ -496,7 +535,7 @@ function DashboardPageInner() {
       return;
     }
 
-    if (item.calendar) {
+    if (item.calendar?.entries?.length) {
       setCalendarTargetId(item.id);
       setActiveCalendarBrief(item.brief);
       setActiveCalendar(item.calendar);
@@ -506,6 +545,7 @@ function DashboardPageInner() {
 
     setCalendarTargetId(item.id);
     setActiveCalendarBrief(item.brief);
+    setActiveCalendar(null);
     setIsCalendarOpen(true);
     setIsCalendarLoading(true);
     setError(null);
@@ -683,7 +723,7 @@ function DashboardPageInner() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => void handleDeleteSavedStrategy(item.id)}
+                              onClick={() => void handleDeleteSavedStrategy(item)}
                               className="w-full rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919] sm:w-auto"
                             >
                               Delete
@@ -722,7 +762,7 @@ function DashboardPageInner() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => void handleDeleteSavedStrategy(item.id)}
+                                onClick={() => void handleDeleteSavedStrategy(item)}
                                 className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-3 py-2 text-xs font-semibold text-[#7c5645] transition hover:bg-[#efd9d3] sm:px-4 sm:text-sm"
                               >
                                 Delete
@@ -798,6 +838,28 @@ function DashboardPageInner() {
           >
             <div className="max-w-md rounded-[1.2rem] border border-[#d7b3ac] bg-[#fff5f1] px-4 py-3 text-center text-sm font-medium text-[#7c5645] shadow-[0_16px_40px_rgba(24,22,20,0.12)]">
               {scheduleNotice.message}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
+        {undoDeleteState ? (
+          <motion.div
+            key={undoDeleteState.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4"
+          >
+            <div className="flex w-full max-w-lg flex-col gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 shadow-[0_16px_40px_rgba(24,22,20,0.12)] sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-[#181614]">Saved content removed.</p>
+              <button
+                type="button"
+                onClick={() => void handleUndoDelete()}
+                className="inline-flex items-center justify-center rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2b2723]"
+              >
+                Undo
+              </button>
             </div>
           </motion.div>
         ) : null}

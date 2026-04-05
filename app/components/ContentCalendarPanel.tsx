@@ -70,9 +70,11 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
                 <div className="min-w-0">
                   <p className="editorial-label text-xs">Pro Calendar</p>
                   <h2 className="mt-2 break-words text-xl font-semibold text-[#181614] sm:text-2xl">{calendar?.title || "14-day content calendar"}</h2>
-                  <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5f584f]">
-                    {calendar?.summary || "Your AI-generated two-week schedule will appear here with daily guidance for what to post, film, and publish."}
-                  </p>
+                  {calendar?.summary ? (
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5f584f]">{calendar.summary}</p>
+                  ) : (
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5f584f]">Your 14-day schedule appears here with daily guidance for what to post, film, and publish.</p>
+                  )}
                   {brief ? (
                     <div className="mt-4 grid gap-3 text-xs text-[#6f685f] md:grid-cols-3">
                       <div>
