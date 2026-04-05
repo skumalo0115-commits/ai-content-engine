@@ -55,6 +55,8 @@ const lockedPreviewStrategy: GeneratedStrategy = {
   videoRecommendations: starterStrategy.videoRecommendations,
 };
 
+const testProModeKey = "ace-dashboard-test-pro-mode-v1";
+
 function waitFor(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -85,6 +87,9 @@ function DashboardPageInner() {
   const [undoDeleteState, setUndoDeleteState] = useState<{ id: number; entry: SavedStrategy; previousEntries: SavedStrategy[] } | null>(null);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
+  const [isTestProMode, setIsTestProMode] = useState(false);
+
+  const effectivePlan: PlanKey = plan === "pro" || isTestProMode ? "pro" : "free";
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
@@ -210,14 +215,22 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setIsTestProMode(window.localStorage.getItem(testProModeKey) === "true");
+  }, []);
+
+  useEffect(() => {
     if (isAuthReady) {
       syncClientState();
     }
   }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
-    setRemainingFreeGenerations(plan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
-  }, [accountUsageCount, plan]);
+    setRemainingFreeGenerations(effectivePlan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
+  }, [accountUsageCount, effectivePlan]);
 
   useEffect(() => {
     if (!scheduleNotice || typeof window === "undefined") {
@@ -398,7 +411,7 @@ function DashboardPageInner() {
     }
   }, [isAuthReady, searchParams, user]);
 
-  const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
+  const isLocked = effectivePlan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
   const currentStrategyAlreadySaved = lastBrief ? hasSavedStrategy({ brief: lastBrief, strategy }) : false;
 
@@ -413,14 +426,11 @@ function DashboardPageInner() {
   }
 
   function handleActivateTestPro() {
-    setStoredSubscription({
-      provider: "paystack",
-      customerId: "test-pro-mode",
-      status: "active",
-      reference: "test-pro-mode",
-    });
-    setStoredPlan("pro");
-    setPlan("pro");
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(testProModeKey, "true");
+    }
+
+    setIsTestProMode(true);
     setError(null);
   }
 
@@ -453,7 +463,7 @@ function DashboardPageInner() {
 
       const nextSourceLabel = `Live AI: ${data.meta?.model || "OpenRouter"}`;
 
-      if (plan !== "pro" && user) {
+      if (effectivePlan !== "pro" && user) {
         const nextUsageCount = accountUsageCount + 1;
         setAccountUsageCount(nextUsageCount);
         setUsageStateCount(nextUsageCount);
@@ -526,7 +536,7 @@ function DashboardPageInner() {
   }
 
   async function handleOpenCalendar(item: SavedStrategy) {
-    if (plan !== "pro") {
+    if (effectivePlan !== "pro") {
       setScheduleNotice({
         id: Date.now(),
         message: "Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.",
@@ -579,7 +589,7 @@ function DashboardPageInner() {
     }
   }
 
-  const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
+  const usageLabel = effectivePlan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
 
   return (
     <div className="relative min-h-screen text-[#181614]">
@@ -588,11 +598,11 @@ function DashboardPageInner() {
         style={{ backgroundImage: "url('/hero-slide-3.png')" }}
       />
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
-      <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} />
+      <Navbar currentPlan={effectivePlan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={effectivePlan} />
 
       <div className="mx-auto grid w-full max-w-7xl gap-5 overflow-x-hidden px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
         <Sidebar
-          currentPlan={plan === "pro" ? "Pro" : "Free"}
+          currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
           activeView={activeView}
           savedCount={savedStrategies.length}
@@ -651,7 +661,7 @@ function DashboardPageInner() {
                 onSubmit={handleGenerate}
                 isLoading={isLoading}
                 isDisabled={isLocked}
-                currentPlan={plan}
+                currentPlan={effectivePlan}
                 remainingFreeGenerations={remainingFreeGenerations}
               />
 
@@ -746,12 +756,12 @@ function DashboardPageInner() {
                                 type="button"
                                 onClick={() => void handleOpenCalendar(item)}
                                 className={`inline-flex items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                                  plan === "pro"
+                                  effectivePlan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
                                     : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
                                 }`}
                               >
-                                {plan === "pro" ? "Schedule" : "Schedule Pro"}
+                                {effectivePlan === "pro" ? "Schedule" : "Schedule Pro"}
                               </button>
                               <button
                                 type="button"

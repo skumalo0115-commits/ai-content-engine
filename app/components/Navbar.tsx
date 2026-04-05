@@ -14,9 +14,10 @@ type NavbarProps = {
   currentPlan?: string;
   usageLabel?: string;
   showStartFree?: boolean;
+  planState?: "free" | "pro";
 };
 
-export function Navbar({ currentPlan, usageLabel, showStartFree = true }: NavbarProps) {
+export function Navbar({ currentPlan, usageLabel, showStartFree = true, planState }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthReady, runAuthenticated, logout } = useAuth();
@@ -45,6 +46,8 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
       window.removeEventListener("storage", syncPlan);
     };
   }, []);
+
+  const activePlan = planState || plan;
 
   return (
     <motion.header
@@ -90,7 +93,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <span className="relative z-[1]">Start Free</span>
             </button>
           ) : null}
-          {isAuthReady && plan !== "pro" ? (
+          {isAuthReady && activePlan !== "pro" ? (
             <UpgradeButton
               compact
               label="Upgrade"
@@ -154,7 +157,7 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               </div>
             ) : null}
             {usageLabel ? <div className="rounded-[1.1rem] border border-black/6 bg-white/80 px-4 py-3 text-sm text-[#585148]">{usageLabel}</div> : null}
-            {plan !== "pro" ? (
+            {activePlan !== "pro" ? (
               <UpgradeButton
                 label="Upgrade to Pro"
                 compact

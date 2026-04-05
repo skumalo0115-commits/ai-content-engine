@@ -21,12 +21,14 @@ const sections = [
 ];
 
 export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, savedCount, onChangeView, onActivateTestPro }: SidebarProps) {
+  const isProPlan = currentPlan === "Pro";
+
   return (
     <motion.aside
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="glass-panel w-full self-start rounded-[28px] p-5 md:sticky md:top-24 md:max-h-[calc(100vh-7rem)] md:w-72 md:overflow-y-auto"
+      className="glass-panel w-full self-start rounded-[28px] p-5 md:w-72 lg:sticky lg:top-24"
     >
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
         <p className="editorial-label text-xs">Launch Plan</p>
@@ -95,9 +97,13 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
       <div className="mt-5 rounded-[1.5rem] border border-black/6 bg-white p-4 text-sm text-[#5f584f]">
         <div className="flex items-center gap-2 text-[#181614]">
           <LockIcon className="h-4 w-4 text-[#20584f]" />
-          Free-plan access
+          {isProPlan ? "Pro plan active" : "Free plan active"}
         </div>
-        <p className="mt-2 leading-6">Your free generations now count down on this signed-in account. Upgrade whenever you want unlimited content and the Pro calendar tools.</p>
+        <p className="mt-2 leading-6">
+          {isProPlan
+            ? "Unlimited generations and the 14-day calendar tools are unlocked on this signed-in account."
+            : "Your free generations count down on this signed-in account. Upgrade whenever you want unlimited content and the Pro calendar tools."}
+        </p>
       </div>
     </motion.aside>
   );

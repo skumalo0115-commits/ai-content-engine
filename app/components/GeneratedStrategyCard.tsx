@@ -78,6 +78,11 @@ export function GeneratedStrategyCard({
   const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   function openVideo(video: VideoRecommendation) {
+    if (!getYouTubeVideoId(video.url)) {
+      window.open(video.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     setActiveVideo(video);
     setIsVideoLoading(true);
   }
