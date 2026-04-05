@@ -401,6 +401,18 @@ function DashboardPageInner() {
     setActiveView("generate");
   }
 
+  function handleActivateTestPro() {
+    setStoredSubscription({
+      provider: "paystack",
+      customerId: "test-pro-mode",
+      status: "active",
+      reference: "test-pro-mode",
+    });
+    setStoredPlan("pro");
+    setPlan("pro");
+    setError(null);
+  }
+
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
     setActiveView("generate");
@@ -546,6 +558,7 @@ function DashboardPageInner() {
           activeView={activeView}
           savedCount={savedStrategies.length}
           onChangeView={setActiveView}
+          onActivateTestPro={handleActivateTestPro}
         />
 
         <main className="space-y-5">
