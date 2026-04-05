@@ -1,12 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { activateAccountSubscription, subscribeToAccountRecord, updateAccountUsageCount } from "@/app/lib/account-store";
 import { useAuth } from "@/app/components/AuthProvider";
 import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
+import { MobileScrollHint } from "@/app/components/MobileScrollHint";
 import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
@@ -80,6 +81,8 @@ function DashboardPageInner() {
   const [activeCalendarBrief, setActiveCalendarBrief] = useState<GeneratePayload | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
+  const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
+  const [showMobileScrollHint, setShowMobileScrollHint] = useState(false);
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
@@ -201,6 +204,40 @@ function DashboardPageInner() {
   useEffect(() => {
     setRemainingFreeGenerations(plan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
   }, [accountUsageCount, plan]);
+
+  useEffect(() => {
+    if (!scheduleNotice || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setScheduleNotice(null);
+    }, 8000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [scheduleNotice]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateScrollHint = () => {
+      const isMobile = window.innerWidth < 640;
+      const canScroll = document.documentElement.scrollHeight - window.innerHeight > 80;
+      const nearTop = window.scrollY < 48;
+      setShowMobileScrollHint(isMobile && !isCalendarOpen && canScroll && nearTop);
+    };
+
+    updateScrollHint();
+    window.addEventListener("scroll", updateScrollHint, { passive: true });
+    window.addEventListener("resize", updateScrollHint);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollHint);
+      window.removeEventListener("resize", updateScrollHint);
+    };
+  }, [activeView, expandedSavedId, isCalendarOpen, savedStrategies.length, strategy.title]);
 
   useEffect(() => {
     if (!user) {
@@ -408,7 +445,10 @@ function DashboardPageInner() {
 
   async function handleOpenCalendar(item: SavedStrategy) {
     if (plan !== "pro") {
-      setError("Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.");
+      setScheduleNotice({
+        id: Date.now(),
+        message: "Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.",
+      });
       setIsCalendarOpen(false);
       return;
     }
@@ -614,11 +654,11 @@ function DashboardPageInner() {
                             <div>
                               <p className="editorial-label text-xs">Selected saved brief</p>
                             </div>
-                            <div className="flex flex-col gap-2 sm:flex-row">
+                            <div className="flex flex-row flex-wrap gap-2">
                               <button
                                 type="button"
                                 onClick={() => void handleOpenCalendar(item)}
-                                className={`inline-flex w-full items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                                className={`inline-flex items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
                                   plan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
                                     : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
@@ -629,14 +669,14 @@ function DashboardPageInner() {
                               <button
                                 type="button"
                                 onClick={() => setExpandedSavedId(item.id)}
-                                className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto"
+                                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-3 py-2 text-xs font-semibold text-white hover:bg-[#2b2723] sm:px-4 sm:text-sm"
                               >
                                 View
                               </button>
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteSavedStrategy(item.id)}
-                                className="inline-flex w-full items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3] sm:w-auto"
+                                className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-3 py-2 text-xs font-semibold text-[#7c5645] transition hover:bg-[#efd9d3] sm:px-4 sm:text-sm"
                               >
                                 Delete
                               </button>
@@ -700,6 +740,22 @@ function DashboardPageInner() {
         brief={activeCalendarBrief}
         isLoading={isCalendarLoading}
       />
+      <AnimatePresence>
+        {scheduleNotice ? (
+          <motion.div
+            key={scheduleNotice.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed inset-x-0 top-20 z-40 flex justify-center px-4"
+          >
+            <div className="max-w-md rounded-[1.2rem] border border-[#d7b3ac] bg-[#fff5f1] px-4 py-3 text-center text-sm font-medium text-[#7c5645] shadow-[0_16px_40px_rgba(24,22,20,0.12)]">
+              {scheduleNotice.message}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>{showMobileScrollHint ? <MobileScrollHint /> : null}</AnimatePresence>
     </div>
   );
 }

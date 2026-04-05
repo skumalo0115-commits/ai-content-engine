@@ -1,7 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import type { GeneratedCalendar, GeneratePayload } from "@/app/lib/types";
+import { MobileScrollHint } from "./MobileScrollHint";
 
 type ContentCalendarPanelProps = {
   isOpen: boolean;
@@ -12,6 +14,40 @@ type ContentCalendarPanelProps = {
 };
 
 export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoading = false }: ContentCalendarPanelProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || typeof window === "undefined") {
+      return;
+    }
+
+    const updateHint = () => {
+      const isMobile = window.innerWidth < 640;
+      const target = scrollRef.current;
+
+      if (!isMobile || !target) {
+        setShowScrollHint(false);
+        return;
+      }
+
+      const canScroll = target.scrollHeight - target.clientHeight > 24;
+      const nearTop = target.scrollTop < 24;
+      setShowScrollHint(canScroll && nearTop);
+    };
+
+    const frameId = window.requestAnimationFrame(updateHint);
+    const target = scrollRef.current;
+    target?.addEventListener("scroll", updateHint, { passive: true });
+    window.addEventListener("resize", updateHint);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      target?.removeEventListener("scroll", updateHint);
+      window.removeEventListener("resize", updateHint);
+    };
+  }, [calendar, isLoading, isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen ? (
@@ -66,7 +102,7 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6 sm:px-6 sm:py-6 sm:pb-10">
+            <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6 sm:px-6 sm:py-6 sm:pb-10">
               {isLoading ? (
                 <div className="rounded-[28px] border border-black/8 bg-white/85 p-10 text-center">
                   <p className="text-lg font-semibold text-[#181614]">Building your 14-day calendar...</p>
@@ -113,6 +149,7 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
                 </div>
               )}
             </div>
+            {showScrollHint ? <MobileScrollHint label="Scroll calendar" className="bottom-6 z-[60]" /> : null}
           </motion.div>
         </motion.div>
       ) : null}
