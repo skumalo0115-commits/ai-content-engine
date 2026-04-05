@@ -262,9 +262,10 @@ function DashboardPageInner() {
     }
 
     const updateScrollHint = () => {
-      const canScroll = document.documentElement.scrollHeight - window.innerHeight > 80;
+      const remainingScroll = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      const canScrollDown = remainingScroll > 80;
       const nearTop = window.scrollY < 48;
-      setShowScrollHint(!isCalendarOpen && canScroll && nearTop);
+      setShowScrollHint(!isCalendarOpen && canScrollDown && nearTop);
     };
 
     updateScrollHint();

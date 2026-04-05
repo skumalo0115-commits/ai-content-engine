@@ -30,7 +30,8 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
         return;
       }
 
-      const canScroll = target.scrollHeight - target.clientHeight > 24;
+      const remainingScroll = target.scrollHeight - target.clientHeight - target.scrollTop;
+      const canScroll = remainingScroll > 24;
       const nearTop = target.scrollTop < 24;
       setShowScrollHint(canScroll && nearTop);
     };
