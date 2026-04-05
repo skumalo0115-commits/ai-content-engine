@@ -105,8 +105,8 @@ export function ContentCalendarPanel({ isOpen, onClose, calendar, brief, isLoadi
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-6 sm:px-6 sm:py-6 sm:pb-10">
               {isLoading ? (
                 <div className="rounded-[28px] border border-black/8 bg-white/85 p-10 text-center">
-                  <p className="text-lg font-semibold text-[#181614]">Building your 14-day calendar...</p>
-                  <p className="mt-2 text-sm text-[#5f584f]">The AI is mapping two weeks of daily actions directly from this saved strategy.</p>
+                  <p className="text-lg font-semibold text-[#181614]">Preparing your 14-day calendar...</p>
+                  <p className="mt-2 text-sm text-[#5f584f]">Your saved strategy is being turned into a ready-to-use two-week posting plan.</p>
                 </div>
               ) : calendar ? (
                 <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-4">
