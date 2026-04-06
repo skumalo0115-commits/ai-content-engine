@@ -12,6 +12,14 @@ function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
 }
 
+function hasScopedSavedContentStorage() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(getSavedContentStorageKey()) !== null;
+}
+
 function getGuestSavedContentStorageKey() {
   return `${savedContentKey}:guest`;
 }
@@ -155,6 +163,7 @@ function setSavedContent(entries: SavedStrategy[]) {
 
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
   window.localStorage.removeItem(getLegacySavedContentStorageKey());
+  window.localStorage.removeItem(getGuestSavedContentStorageKey());
 }
 
 function clearLegacySavedContentSources() {
@@ -191,7 +200,7 @@ export function getSavedStrategies() {
   const scopedEntries = getSavedContentFromStorage();
   const guestEntries = getGuestSavedContentFromStorage();
   const legacyEntries = getLegacySavedContentFromStorage();
-  const entries = scopedEntries.length > 0 ? scopedEntries : guestEntries.length > 0 ? guestEntries : legacyEntries;
+  const entries = hasScopedSavedContentStorage() ? scopedEntries : guestEntries.length > 0 ? guestEntries : legacyEntries;
   return entries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 

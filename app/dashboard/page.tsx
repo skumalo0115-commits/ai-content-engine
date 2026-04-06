@@ -89,6 +89,7 @@ function DashboardPageInner() {
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
   const [isTestProMode, setIsTestProMode] = useState(false);
+  const [hasDismissedScrollHint, setHasDismissedScrollHint] = useState(false);
 
   const effectivePlan: PlanKey = plan === "pro" || isTestProMode ? "pro" : "free";
   const visibleSavedStrategies = savedStrategies.filter((item) => !hiddenSavedIds.includes(item.id));
@@ -263,6 +264,14 @@ function DashboardPageInner() {
       return;
     }
 
+    setHasDismissedScrollHint(false);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const updateScrollHint = () => {
       const pageHeight = Math.max(
         document.documentElement.scrollHeight,
@@ -273,7 +282,12 @@ function DashboardPageInner() {
       const remainingScroll = pageHeight - window.innerHeight - window.scrollY;
       const canScrollDown = remainingScroll > 80;
       const nearTop = window.scrollY < 48;
-      setShowScrollHint(!isCalendarOpen && canScrollDown && nearTop);
+
+      if (window.scrollY > 24) {
+        setHasDismissedScrollHint(true);
+      }
+
+      setShowScrollHint(!isCalendarOpen && !hasDismissedScrollHint && canScrollDown && nearTop);
     };
 
     updateScrollHint();
@@ -290,7 +304,7 @@ function DashboardPageInner() {
       window.removeEventListener("scroll", updateScrollHint);
       window.removeEventListener("resize", updateScrollHint);
     };
-  }, [activeView, expandedSavedId, isCalendarOpen, strategy.title, visibleSavedStrategies.length]);
+  }, [activeView, expandedSavedId, hasDismissedScrollHint, isCalendarOpen, strategy.title, visibleSavedStrategies.length]);
 
   useEffect(() => {
     if (!user) {
@@ -619,7 +633,7 @@ function DashboardPageInner() {
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
       <Navbar currentPlan={effectivePlan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={effectivePlan} />
 
-      <div className="mx-auto grid w-full max-w-7xl gap-5 overflow-x-hidden px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 overflow-x-hidden px-4 py-6 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
         <Sidebar
           currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
