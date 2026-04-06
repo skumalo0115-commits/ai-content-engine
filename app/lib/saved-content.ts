@@ -174,7 +174,7 @@ function clearLegacySavedContentSources() {
 }
 
 function getCurrentAccountUid() {
-  const activeUid = firebaseAuth.currentUser?.uid;
+  const activeUid = firebaseAuth?.currentUser?.uid;
 
   if (activeUid) {
     return activeUid;

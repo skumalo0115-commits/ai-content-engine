@@ -345,11 +345,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
-            const hasValidSubscription = Boolean(record.subscription?.customerId);
+            const subscription = record.subscription;
 
-            if (hasValidSubscription) {
+            if (subscription?.customerId) {
               setStoredPlan("pro");
-              setStoredSubscription(record.subscription);
+              setStoredSubscription(subscription);
               void syncSubscriptionStatus(nextUserWithProfile, record.profile);
             } else {
               if (record.plan !== "free") {
