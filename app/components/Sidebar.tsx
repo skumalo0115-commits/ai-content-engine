@@ -25,7 +25,7 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="glass-panel w-full self-start rounded-[28px] p-5 md:w-72 lg:sticky lg:top-24"
+      className="glass-panel sticky top-24 w-full self-start rounded-[28px] p-5 md:w-72"
     >
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
         <p className="editorial-label text-xs">Launch Plan</p>

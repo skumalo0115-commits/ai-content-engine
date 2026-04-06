@@ -3,6 +3,16 @@
 import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrategy } from "./types";
 
 const savedContentKey = "ace-saved-content-v1";
+const usageScopeKey = "ace-auth-usage-scope-v1";
+
+function getSavedContentStorageKey() {
+  if (typeof window === "undefined") {
+    return `${savedContentKey}:guest`;
+  }
+
+  const scope = window.localStorage.getItem(usageScopeKey) || "guest";
+  return `${savedContentKey}:${scope}`;
+}
 
 function getStrategySignature(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
   return JSON.stringify({
@@ -62,7 +72,7 @@ function getSavedContentFromStorage() {
     return [];
   }
 
-  const raw = window.localStorage.getItem(savedContentKey);
+  const raw = window.localStorage.getItem(getSavedContentStorageKey());
   if (!raw) {
     return [];
   }
@@ -97,7 +107,7 @@ function setSavedContent(entries: SavedStrategy[]) {
     return;
   }
 
-  window.localStorage.setItem(savedContentKey, JSON.stringify(entries));
+  window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
 }
 
 export function getSavedStrategies() {
