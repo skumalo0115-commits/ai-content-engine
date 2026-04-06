@@ -463,6 +463,15 @@ function DashboardPageInner() {
     setError(null);
   }
 
+  function handleDeactivateTestPro() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(testProModeKey);
+    }
+
+    setIsTestProMode(false);
+    setError(null);
+  }
+
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
     setActiveView("generate");
@@ -640,7 +649,9 @@ function DashboardPageInner() {
           activeView={activeView}
           savedCount={visibleSavedStrategies.length}
           onChangeView={setActiveView}
+          isTestProMode={isTestProMode}
           onActivateTestPro={handleActivateTestPro}
+          onDeactivateTestPro={handleDeactivateTestPro}
         />
 
         <main className="space-y-5">

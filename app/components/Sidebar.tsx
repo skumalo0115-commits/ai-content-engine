@@ -11,7 +11,9 @@ type SidebarProps = {
   activeView: DashboardView;
   savedCount: number;
   onChangeView: (view: DashboardView) => void;
+  isTestProMode?: boolean;
   onActivateTestPro?: () => void;
+  onDeactivateTestPro?: () => void;
 };
 
 const sections = [
@@ -20,7 +22,16 @@ const sections = [
   { title: "Analytics", status: "Soon", icon: GaugeIcon, view: null },
 ];
 
-export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, savedCount, onChangeView, onActivateTestPro }: SidebarProps) {
+export function Sidebar({
+  currentPlan,
+  remainingFreeGenerations,
+  activeView,
+  savedCount,
+  onChangeView,
+  isTestProMode = false,
+  onActivateTestPro,
+  onDeactivateTestPro,
+}: SidebarProps) {
   const isProPlan = currentPlan === "Pro";
 
   return (
@@ -84,13 +95,23 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
         })}
       </nav>
 
-      {currentPlan !== "Pro" && onActivateTestPro ? (
+      {!isProPlan && onActivateTestPro ? (
         <button
           type="button"
           onClick={onActivateTestPro}
           className="mt-4 w-full rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2b2723]"
         >
           Test Pro Mode
+        </button>
+      ) : null}
+
+      {isTestProMode && onDeactivateTestPro ? (
+        <button
+          type="button"
+          onClick={onDeactivateTestPro}
+          className="mt-3 w-full rounded-[1.1rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] transition hover:bg-[#f8f4ee]"
+        >
+          Back to Free Mode
         </button>
       ) : null}
 
