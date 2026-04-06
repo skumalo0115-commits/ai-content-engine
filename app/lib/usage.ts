@@ -188,6 +188,7 @@ export function getStoredPlan(): PlanKey {
     if (scopedSubscription?.customerId) {
       return "pro";
     }
+  }
 
   return "free";
 }
