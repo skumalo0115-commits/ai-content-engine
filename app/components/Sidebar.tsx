@@ -11,9 +11,6 @@ type SidebarProps = {
   activeView: DashboardView;
   savedCount: number;
   onChangeView: (view: DashboardView) => void;
-  isTestProMode?: boolean;
-  onActivateTestPro?: () => void;
-  onDeactivateTestPro?: () => void;
 };
 
 const sections = [
@@ -28,9 +25,6 @@ export function Sidebar({
   activeView,
   savedCount,
   onChangeView,
-  isTestProMode = false,
-  onActivateTestPro,
-  onDeactivateTestPro,
 }: SidebarProps) {
   const isProPlan = currentPlan === "Pro";
 
@@ -39,7 +33,7 @@ export function Sidebar({
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="glass-panel w-full self-start rounded-[28px] p-5 md:sticky md:top-20 md:h-fit md:w-72"
+      className="glass-panel w-full self-start rounded-[28px] p-5 md:sticky md:top-24 md:w-72"
     >
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
         <p className="editorial-label text-xs">Launch Plan</p>
@@ -94,26 +88,6 @@ export function Sidebar({
           );
         })}
       </nav>
-
-      {!isProPlan && onActivateTestPro ? (
-        <button
-          type="button"
-          onClick={onActivateTestPro}
-          className="mt-4 w-full rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2b2723]"
-        >
-          Test Pro Mode
-        </button>
-      ) : null}
-
-      {isTestProMode && onDeactivateTestPro ? (
-        <button
-          type="button"
-          onClick={onDeactivateTestPro}
-          className="mt-3 w-full rounded-[1.1rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] transition hover:bg-[#f8f4ee]"
-        >
-          Back to Free Mode
-        </button>
-      ) : null}
 
       <div className="mt-5 rounded-[1.5rem] border border-black/6 bg-white p-4 text-sm text-[#5f584f]">
         <div className="flex items-center gap-2 text-[#181614]">

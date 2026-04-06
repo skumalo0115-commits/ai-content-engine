@@ -64,8 +64,6 @@ const lockedPreviewStrategy: GeneratedStrategy = {
   videoRecommendations: starterStrategy.videoRecommendations,
 };
 
-const testProModeKey = "ace-dashboard-test-pro-mode-v1";
-
 function waitFor(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -97,10 +95,8 @@ function DashboardPageInner() {
   const [hiddenSavedIds, setHiddenSavedIds] = useState<string[]>([]);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
-  const [isTestProMode, setIsTestProMode] = useState(false);
   const [hasDismissedScrollHint, setHasDismissedScrollHint] = useState(false);
 
-  const effectivePlan: PlanKey = plan === "pro" || isTestProMode ? "pro" : "free";
   const visibleSavedStrategies = savedStrategies.filter((item) => !hiddenSavedIds.includes(item.id));
 
   const syncClientState = useEffectEvent(() => {
@@ -227,22 +223,14 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    setIsTestProMode(window.localStorage.getItem(testProModeKey) === "true");
-  }, []);
-
-  useEffect(() => {
     if (isAuthReady) {
       syncClientState();
     }
   }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
-    setRemainingFreeGenerations(effectivePlan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
-  }, [accountUsageCount, effectivePlan]);
+    setRemainingFreeGenerations(plan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
+  }, [accountUsageCount, plan]);
 
   useEffect(() => {
     if (!scheduleNotice || typeof window === "undefined") {
@@ -449,7 +437,7 @@ function DashboardPageInner() {
     }
   }, [isAuthReady, searchParams, user]);
 
-  const isLocked = effectivePlan !== "pro" && remainingFreeGenerations <= 0;
+  const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
   const currentStrategyAlreadySaved = lastBrief ? hasSavedStrategy({ brief: lastBrief, strategy }) : false;
 
@@ -461,24 +449,6 @@ function DashboardPageInner() {
     setHasPinnedOutput(false);
     setError(null);
     setActiveView("generate");
-  }
-
-  function handleActivateTestPro() {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(testProModeKey, "true");
-    }
-
-    setIsTestProMode(true);
-    setError(null);
-  }
-
-  function handleDeactivateTestPro() {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(testProModeKey);
-    }
-
-    setIsTestProMode(false);
-    setError(null);
   }
 
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
@@ -510,7 +480,7 @@ function DashboardPageInner() {
 
       const nextSourceLabel = `Live AI: ${data.meta?.model || "OpenRouter"}`;
 
-      if (effectivePlan !== "pro" && user) {
+      if (plan !== "pro" && user) {
         const nextUsageCount = accountUsageCount + 1;
         setAccountUsageCount(nextUsageCount);
         setUsageStateCount(nextUsageCount);
@@ -590,7 +560,7 @@ function DashboardPageInner() {
   }
 
   async function handleOpenCalendar(item: SavedStrategy) {
-    if (effectivePlan !== "pro") {
+    if (plan !== "pro") {
       setScheduleNotice({
         id: Date.now(),
         message: "Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.",
@@ -643,7 +613,7 @@ function DashboardPageInner() {
     }
   }
 
-  const usageLabel = effectivePlan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
+  const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
 
   return (
     <div className="relative min-h-screen text-[#181614]">
@@ -652,21 +622,18 @@ function DashboardPageInner() {
         style={{ backgroundImage: "url('/hero-slide-3.png')" }}
       />
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
-      <Navbar currentPlan={effectivePlan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={effectivePlan} />
+      <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={plan} />
 
-      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 overflow-x-hidden px-4 pb-6 pt-4 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 px-4 pb-6 pt-4 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
         <Sidebar
-          currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
+          currentPlan={plan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
           activeView={activeView}
           savedCount={visibleSavedStrategies.length}
           onChangeView={setActiveView}
-          isTestProMode={isTestProMode}
-          onActivateTestPro={handleActivateTestPro}
-          onDeactivateTestPro={handleDeactivateTestPro}
         />
 
-        <main className="space-y-5">
+        <main className="min-w-0 space-y-5">
           {activeView === "generate" && isLocked ? (
             <div className="glass-panel rounded-[28px] p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -717,7 +684,7 @@ function DashboardPageInner() {
                 onSubmit={handleGenerate}
                 isLoading={isLoading}
                 isDisabled={isLocked}
-                currentPlan={effectivePlan}
+                currentPlan={plan}
                 remainingFreeGenerations={remainingFreeGenerations}
               />
 
@@ -812,12 +779,12 @@ function DashboardPageInner() {
                                 type="button"
                                 onClick={() => void handleOpenCalendar(item)}
                                 className={`inline-flex items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                                  effectivePlan === "pro"
+                                  plan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
                                     : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
                                 }`}
                               >
-                                {effectivePlan === "pro" ? "Schedule" : "Schedule Pro"}
+                                {plan === "pro" ? "Schedule" : "Schedule Pro"}
                               </button>
                               <button
                                 type="button"
