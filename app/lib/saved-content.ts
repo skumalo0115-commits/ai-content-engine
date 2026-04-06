@@ -7,6 +7,16 @@ import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrate
 import { getUsageAccountScope } from "./usage";
 
 const savedContentKey = "ace-saved-content-v1";
+const usageScopeKey = "ace-auth-usage-scope-v1";
+
+function getSavedContentStorageKey() {
+  if (typeof window === "undefined") {
+    return `${savedContentKey}:guest`;
+  }
+
+  const scope = window.localStorage.getItem(usageScopeKey) || "guest";
+  return `${savedContentKey}:${scope}`;
+}
 
 function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
@@ -162,38 +172,6 @@ function setSavedContent(entries: SavedStrategy[]) {
   }
 
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
-  window.localStorage.removeItem(getLegacySavedContentStorageKey());
-  window.localStorage.removeItem(getGuestSavedContentStorageKey());
-}
-
-function clearLegacySavedContentSources() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem(getLegacySavedContentStorageKey());
-  window.localStorage.removeItem(getGuestSavedContentStorageKey());
-}
-
-function getCurrentAccountUid() {
-  return firebaseAuth?.currentUser?.uid || null;
-}
-
-async function persistSavedContent(entries: SavedStrategy[]) {
-  setSavedContent(entries);
-
-  const uid = getCurrentAccountUid();
-
-  if (!uid) {
-    return;
-  }
-
-  try {
-    await syncAccountStateToServer({ savedContent: entries });
-    return;
-  } catch {
-    await updateAccountSavedContent(uid, entries);
-  }
 }
 
 export function getSavedStrategies() {

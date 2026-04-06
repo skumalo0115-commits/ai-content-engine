@@ -345,37 +345,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             const nextUserWithProfile = toAuthUser(nextFirebaseUser, nextOverride);
-            const nextStoredSubscription = record.subscription;
-            const localSavedStrategies = getSavedStrategies();
-            const localUsageCount = getHighestStoredUsageCount(nextFirebaseUser.uid);
-            const nextUsageCount = Math.max(record.usageCount, localUsageCount);
+            const hasValidSubscription = Boolean(record.subscription?.customerId);
 
-            setUsageStateCount(nextUsageCount);
-
-            if (localSavedStrategies.length > 0 || localUsageCount > record.usageCount) {
-              const syncPayload: { savedContent?: ReturnType<typeof getSavedStrategies>; usageCount?: number } = {};
-
-              if (localSavedStrategies.length > 0) {
-                syncPayload.savedContent = localSavedStrategies;
-              }
-
-              if (localUsageCount > record.usageCount) {
-                syncPayload.usageCount = localUsageCount;
-              }
-
-              void syncAccountStateToServer(syncPayload)
-                .catch(() => (localUsageCount > record.usageCount ? updateAccountUsageCount(nextFirebaseUser.uid, localUsageCount) : Promise.resolve()))
-                .then(() => clearLegacyUsageState())
-                .catch(() => undefined);
-            } else if (nextUsageCount > 0) {
-              clearLegacyUsageState();
-            }
-
-            void hydrateSavedStrategies(record.savedContent).catch(() => undefined);
-
-            if (nextStoredSubscription?.customerId) {
-              setStoredPlan("free");
-              setStoredSubscription(nextStoredSubscription);
+            if (hasValidSubscription) {
+              setStoredPlan("pro");
+              setStoredSubscription(record.subscription);
               void syncSubscriptionStatus(nextUserWithProfile, record.profile);
             } else {
               if (record.plan !== "free") {

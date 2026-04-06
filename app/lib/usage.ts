@@ -189,14 +189,6 @@ export function getStoredPlan(): PlanKey {
       return "pro";
     }
 
-    window.localStorage.setItem(getPlanStorageKey(), "free");
-    return "free";
-  }
-
-  if (scopedValue) {
-    return "free";
-  }
-
   return "free";
 }
 
