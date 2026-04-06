@@ -106,6 +106,8 @@ export type AccountRecord = {
   plan: PlanKey;
   profile: AccountProfile;
   subscription: StoredSubscription | null;
+  savedContent: SavedStrategy[];
+  usageCount: number;
   updatedAt: string;
 };
 

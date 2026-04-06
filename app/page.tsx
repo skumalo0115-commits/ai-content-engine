@@ -10,7 +10,7 @@ import { Reveal } from "@/app/components/Reveal";
 import { SelfieHeroScene } from "@/app/components/SelfieHeroScene";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { getStoredPlan, planChangeEventName } from "@/app/lib/usage";
-import { planConfigs, siteConfig } from "@/app/lib/site";
+import { FREE_DAILY_GENERATIONS, planConfigs, siteConfig } from "@/app/lib/site";
 import { ArrowUpRightIcon, BoltIcon, CalendarIcon, GaugeIcon, HashIcon, ShieldIcon, SparkIcon } from "./components/Icons";
 
 const featureCards = [
@@ -99,7 +99,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={openDashboard}
-              className="interactive-pop inline-flex items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+              className="interactive-pop inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto"
             >
               <span className="relative z-[1] text-white">{user ? "Dashboard" : "Start Free"}</span>
               <ArrowUpRightIcon className="relative z-[1] h-4 w-4 text-white" />
@@ -107,7 +107,7 @@ export default function HomePage() {
             {plan !== "pro" ? (
               <UpgradeButton
                 label="Upgrade to Pro"
-                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+                className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614] sm:w-auto"
               />
             ) : null}
           </div>
@@ -116,9 +116,9 @@ export default function HomePage() {
 
           <div className="relative grid gap-4 sm:grid-cols-3">
             {[
-              { value: "5/day", label: "Free generations" },
+              { value: `${FREE_DAILY_GENERATIONS} total`, label: "Free generations per account" },
               { value: "$10", label: "Pro monthly plan" },
-              { value: "Live only", label: "Runs through OpenRouter with real output" },
+              { value: "Synced", label: "Saved content follows your signed-in account" },
             ].map((stat) => (
               <div key={stat.label} className="interactive-pop rounded-[1.6rem] border border-black/6 bg-white/85 p-5 shadow-[0_18px_40px_rgba(24,22,20,0.05)]">
                 <p className="text-3xl font-semibold text-[#181614]">{stat.value}</p>
@@ -138,7 +138,7 @@ export default function HomePage() {
           <p className="text-xs uppercase tracking-[0.3em] text-white/78">What it gives you</p>
           <h2 className="text-4xl font-semibold tracking-tight text-white">A cleaner way to turn one idea into content that looks ready to publish.</h2>
           <p className="max-w-2xl text-base leading-7 text-white/82">
-            Tell it what you sell, who you want to reach, and what result you want. It gives you a usable caption angle, a short-form content idea, a cleaner hashtag set, and a simple next-post rhythm you can actually work from.
+            Tell it what you sell, who you want to reach, and what result you want. It gives you a usable caption angle, a short-form content idea, a cleaner hashtag set, and a simple next-post rhythm you can actually work from, then keeps your saved content with your account.
           </p>
         </div>
 
@@ -156,7 +156,7 @@ export default function HomePage() {
           <p className="text-xs uppercase tracking-[0.3em] text-white/78">Why this helps you</p>
           <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-white">Use the free plan to plan smarter content before you spend time filming, designing, or posting.</h2>
           <p className="max-w-2xl text-base leading-7 text-white/82">
-            Instead of guessing what to post, you can walk away with a clearer caption angle, a short-form video hook, a useful hashtag set, and a simple posting direction that fits your goal.
+            Instead of guessing what to post, you can walk away with a clearer caption angle, a short-form video hook, a useful hashtag set, and a simple posting direction that fits your goal, then open the same account later on your phone or laptop.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             {principleCards.map((item) => (
@@ -183,11 +183,11 @@ export default function HomePage() {
                 title: "Generate a content pack",
                 text: "Get a caption, a video idea, hashtags, and a mini posting plan in one clean batch.",
               },
-                {
-                  step: "03",
-                  title: "Scale the content that gets results",
-                  text: "Stay on the free plan while you test, then unlock Pro when you need more than the daily cap.",
-                },
+              {
+                step: "03",
+                title: "Log back in and keep going",
+                text: "Saved content, usage, and plan access stay attached to the same account, so your workspace follows you across devices.",
+              },
             ].map((item) => (
               <div key={item.step} className="grid gap-3 border-b border-black/6 pb-5 last:border-b-0 last:pb-0 sm:grid-cols-[70px_1fr]">
                 <p className="text-sm font-semibold text-[#20584f]">{item.step}</p>
@@ -223,18 +223,18 @@ export default function HomePage() {
             <p className="editorial-label text-xs">Ready when you are</p>
             <h2 className="max-w-2xl text-4xl font-semibold tracking-tight text-[#181614]">Start with tomorrow&apos;s post, then build the rest of the week from there.</h2>
             <p className="max-w-2xl text-base leading-7 text-[#5f584f]">
-              Use the free plan to test a caption direction, pull a reel hook, and line up your next few posts before you open Canva, set up your tripod, or record your first clip.
+              Use the free plan to test a caption direction, pull a reel hook, and line up your next few posts before you open Canva, set up your tripod, or record your first clip. When you save while signed in, that content stays with your account.
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
             <button
               type="button"
               onClick={openDashboard}
-              className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614]"
+              className="interactive-pop inline-flex w-full items-center justify-center rounded-full border border-black/8 bg-white px-6 py-3 text-sm font-semibold text-[#181614] hover:border-[#20584f]/20 hover:text-[#181614] sm:w-auto"
             >
               <span className="relative z-[1]">{user ? "Open Dashboard" : "Try the New Free Plan"}</span>
             </button>
-            {plan !== "pro" ? <UpgradeButton label="Go Pro for $10/month" className="interactive-pop inline-flex items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]" /> : null}
+            {plan !== "pro" ? <UpgradeButton label="Go Pro for $10/month" className="interactive-pop inline-flex w-full items-center justify-center rounded-full bg-[#181614] px-6 py-3 text-sm font-semibold text-white hover:bg-[#2b2723] sm:w-auto" /> : null}
           </div>
         </div>
       </Reveal>

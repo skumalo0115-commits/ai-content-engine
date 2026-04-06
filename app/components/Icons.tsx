@@ -196,3 +196,38 @@ export function BrandLogoIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </BaseIcon>
+  );
+}
+
+export function XIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M6 6 18 18" />
+      <path d="M18 6 6 18" />
+    </BaseIcon>
+  );
+}
+
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </BaseIcon>
+  );
+}
+
+export function PinIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m15 4 5 5-3 1-2 5-2-2-4 7-1-1 7-4-2-2 5-2 1-3Z" />
+    </BaseIcon>
+  );
+}

@@ -9,12 +9,12 @@ export const siteConfig = {
   name: "AI Content Engine",
   shortName: "ACE",
   description:
-    "Generate social captions, TikTok ideas, hashtags, and simple content plans with an AI marketing workflow built for small businesses.",
-  heroTitle: "Your AI Marketing Genius",
-  heroSubtitle: "Generate viral social media content for your business instantly.",
-  trustBadge: "Built for small businesses, creators, cafes, salons, agencies, and local service brands.",
+    "Generate social captions, TikTok ideas, hashtags, saved strategies, and simple content plans with an AI marketing workflow that stays attached to your account across devices.",
+  heroTitle: "Your AI content workspace for every device",
+  heroSubtitle: "Generate content ideas, save your best strategies, and pick up where you left off when you log back into the same account.",
+  trustBadge: "Built for small businesses, creators, salons, agencies, cafes, and local service brands that need account-based content planning.",
   pricingBlurb:
-    "Start free with three total generations on your account, then upgrade to Pro when you need unlimited output and faster campaign momentum.",
+    "Start free with three total generations on your account, then upgrade to Pro when you want unlimited output, saved-content tools, and the same plan following that paid account on every device.",
   companyName: "AI Content Engine",
   email: "s.kumalo0115@gmail.com",
   phoneDisplay: "082 774 4933",
@@ -50,10 +50,11 @@ export const planConfigs: PlanConfig[] = [
     key: "free",
     name: "Free",
     priceLabel: "$0",
-    description: `For testing ideas and validating your next post angle with ${FREE_DAILY_GENERATIONS} total generations on your account.`,
+    description: `For testing ideas and validating your next post angle with ${FREE_DAILY_GENERATIONS} total generations and account-based saved content sync.`,
     ctaLabel: "Start Free",
     features: [
       `${FREE_DAILY_GENERATIONS} total generations on your account`,
+      "Saved content follows the same signed-in account across devices",
       "Caption, TikTok idea, hashtag stack, and content mini-plan",
       "Launch-ready dashboard workflow",
       "Perfect for testing and first campaigns",
@@ -66,7 +67,8 @@ export const planConfigs: PlanConfig[] = [
     description: "For businesses that need unlimited generation, AI scheduling, better campaign velocity, and premium positioning.",
     ctaLabel: "Upgrade to Pro",
     features: [
-      "Unlimited generations",
+      "Unlimited generations on the paid account",
+      "Pro follows the same paying account every time you log in",
       "Priority-quality output positioning",
       "14-day AI content calendar from any saved strategy",
       "Launch beta access to saved content and exports",
@@ -81,9 +83,14 @@ export const faqItems = [
     answer: `The free plan gives you ${FREE_DAILY_GENERATIONS} total generations on your signed-in account. Once those are used, you can upgrade to Pro for unlimited access.`,
   },
   {
+    question: "Will my saved content appear on another device?",
+    answer:
+      "Yes. When you save content while signed in, it is attached to that account so it can load again when you log into the same account on another device.",
+  },
+  {
     question: "What does Pro unlock?",
     answer:
-      "Pro unlocks unlimited generation, premium positioning inside the dashboard, and advanced saved-content features like the 14-day AI schedule calendar.",
+      "Pro unlocks unlimited generation, premium positioning inside the dashboard, and advanced saved-content features like the 14-day AI schedule calendar for that paid account.",
   },
   {
     question: "Can I use this for any kind of small business?",

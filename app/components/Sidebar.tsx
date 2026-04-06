@@ -11,6 +11,9 @@ type SidebarProps = {
   activeView: DashboardView;
   savedCount: number;
   onChangeView: (view: DashboardView) => void;
+  isTestProMode?: boolean;
+  onActivateTestPro?: () => void;
+  onDeactivateTestPro?: () => void;
 };
 
 const sections = [
@@ -19,7 +22,18 @@ const sections = [
   { title: "Analytics", status: "Soon", icon: GaugeIcon, view: null },
 ];
 
-export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, savedCount, onChangeView }: SidebarProps) {
+export function Sidebar({
+  currentPlan,
+  remainingFreeGenerations,
+  activeView,
+  savedCount,
+  onChangeView,
+  isTestProMode = false,
+  onActivateTestPro,
+  onDeactivateTestPro,
+}: SidebarProps) {
+  const isProPlan = currentPlan === "Pro";
+
   return (
     <motion.aside
       initial={{ x: -20, opacity: 0 }}
@@ -31,7 +45,7 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
         <p className="editorial-label text-xs">Launch Plan</p>
         <p className="mt-2 text-xl font-semibold text-[#181614]">{currentPlan}</p>
         <p className="mt-2 text-sm leading-6 text-[#5f584f]">
-          {currentPlan === "Pro" ? "Unlimited generations unlocked on this browser." : `${remainingFreeGenerations} free generations left on this account.`}
+          {currentPlan === "Pro" ? "Unlimited generations unlocked on this account." : `${remainingFreeGenerations} free generations left on this account.`}
         </p>
       </div>
 
@@ -81,12 +95,36 @@ export function Sidebar({ currentPlan, remainingFreeGenerations, activeView, sav
         })}
       </nav>
 
+      {!isProPlan && onActivateTestPro ? (
+        <button
+          type="button"
+          onClick={onActivateTestPro}
+          className="mt-4 w-full rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2b2723]"
+        >
+          Test Pro Mode
+        </button>
+      ) : null}
+
+      {isTestProMode && onDeactivateTestPro ? (
+        <button
+          type="button"
+          onClick={onDeactivateTestPro}
+          className="mt-3 w-full rounded-[1.1rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] transition hover:bg-[#f8f4ee]"
+        >
+          Back to Free Mode
+        </button>
+      ) : null}
+
       <div className="mt-5 rounded-[1.5rem] border border-black/6 bg-white p-4 text-sm text-[#5f584f]">
         <div className="flex items-center gap-2 text-[#181614]">
           <LockIcon className="h-4 w-4 text-[#20584f]" />
-          Free-plan access
+          {isProPlan ? "Pro plan active" : "Free plan active"}
         </div>
-        <p className="mt-2 leading-6">Your free generations now count down on this signed-in account. Upgrade whenever you want unlimited content and the Pro calendar tools.</p>
+        <p className="mt-2 leading-6">
+          {isProPlan
+            ? "Unlimited generations and the 14-day calendar tools are unlocked on this signed-in account."
+            : "Your free generations count down on this signed-in account. Upgrade whenever you want unlimited content and the Pro calendar tools."}
+        </p>
       </div>
     </motion.aside>
   );

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { primaryNavLinks, siteConfig } from "@/app/lib/site";
 import { useAuth } from "./AuthProvider";
-import { BrandLogoIcon, CrownIcon } from "./Icons";
+import { BrandLogoIcon, CrownIcon, MenuIcon, XIcon } from "./Icons";
 import { UpgradeButton } from "./UpgradeButton";
 import { getStoredPlan, planChangeEventName } from "@/app/lib/usage";
 
@@ -14,9 +14,10 @@ type NavbarProps = {
   currentPlan?: string;
   usageLabel?: string;
   showStartFree?: boolean;
+  planState?: "free" | "pro";
 };
 
-export function Navbar({ currentPlan, usageLabel, showStartFree = true }: NavbarProps) {
+export function Navbar({ currentPlan, usageLabel, showStartFree = true, planState }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthReady, runAuthenticated, logout } = useAuth();
@@ -46,6 +47,8 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
     };
   }, []);
 
+  const activePlan = planState || plan;
+
   return (
     <motion.header
       initial={{ y: -18, opacity: 0 }}
@@ -55,11 +58,11 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
     >
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-[#20584f]">
+          <Link href="/" className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-[#20584f] sm:text-sm sm:tracking-[0.28em]">
             <BrandLogoIcon className="h-9 w-9" />
-            {siteConfig.name.toUpperCase()}
+            <span className="max-w-[9rem] leading-tight sm:max-w-none">{siteConfig.name.toUpperCase()}</span>
           </Link>
-          <nav className="hidden items-center gap-5 text-sm text-[#4d463f] md:flex">
+          <nav className="hidden items-center gap-5 text-sm text-[#4d463f] lg:flex">
             {navLinks.map((link) => (
               <button key={link.href} type="button" onClick={() => runAuthenticated({ redirectTo: link.href })} className="nav-pill">
                 {link.label}
@@ -71,12 +74,12 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {usageLabel ? (
             <div className="hidden rounded-full border border-black/6 bg-white/80 px-3 py-1.5 text-xs text-[#585148] sm:block">{usageLabel}</div>
           ) : null}
           {currentPlan ? (
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#e6efeb] px-3 py-1.5 text-xs text-[#20584f]">
+            <div className="hidden items-center gap-2 rounded-full bg-[#e6efeb] px-3 py-1.5 text-xs text-[#20584f] sm:inline-flex">
               <CrownIcon className="h-3.5 w-3.5" />
               {currentPlan}
             </div>
@@ -90,11 +93,11 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <span className="relative z-[1]">Start Free</span>
             </button>
           ) : null}
-          {isAuthReady && plan !== "pro" ? (
+          {isAuthReady && activePlan !== "pro" ? (
             <UpgradeButton
               compact
               label="Upgrade"
-              className="interactive-pop inline-flex rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
+              className="interactive-pop hidden rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723] sm:inline-flex"
             />
           ) : null}
           {isAuthReady && user ? (
@@ -102,13 +105,13 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               <button
                 type="button"
                 onClick={() => setIsMenuOpen((current) => !current)}
-                className="interactive-pop inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-sm font-semibold text-[#181614]"
+                className="interactive-pop hidden h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-sm font-semibold text-[#181614] lg:inline-flex"
               >
                 <span className="relative z-[1]">{initials}</span>
               </button>
 
               {isMenuOpen ? (
-                <div className="absolute right-0 top-14 w-44 rounded-[1.2rem] border border-black/8 bg-white p-2 shadow-[0_20px_40px_rgba(24,22,20,0.08)]">
+                <div className="absolute right-0 top-14 hidden w-44 rounded-[1.2rem] border border-black/8 bg-white p-2 shadow-[0_20px_40px_rgba(24,22,20,0.08)] lg:block">
                   <button
                     type="button"
                     onClick={() => {
@@ -133,8 +136,96 @@ export function Navbar({ currentPlan, usageLabel, showStartFree = true }: Navbar
               ) : null}
             </div>
           ) : null}
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((current) => !current)}
+            className="interactive-pop inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-[#181614] lg:hidden"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+      {isMenuOpen ? (
+        <div className="border-t border-black/6 bg-[rgba(247,244,238,0.98)] px-4 pb-4 pt-3 lg:hidden">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-2">
+            {currentPlan ? (
+              <div className="inline-flex items-center gap-2 self-start rounded-full bg-[#e6efeb] px-3 py-1.5 text-xs text-[#20584f]">
+                <CrownIcon className="h-3.5 w-3.5" />
+                {currentPlan}
+              </div>
+            ) : null}
+            {usageLabel ? <div className="rounded-[1.1rem] border border-black/6 bg-white/80 px-4 py-3 text-sm text-[#585148]">{usageLabel}</div> : null}
+            {activePlan !== "pro" ? (
+              <UpgradeButton
+                label="Upgrade to Pro"
+                compact
+                className="interactive-pop inline-flex w-full items-center justify-center rounded-[1.1rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white hover:bg-[#2b2723]"
+              />
+            ) : null}
+            {navLinks.map((link) => (
+              <button
+                key={link.href}
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  runAuthenticated({ redirectTo: link.href });
+                }}
+                className="w-full rounded-[1.1rem] border border-black/6 bg-white px-4 py-3 text-left text-sm font-medium text-[#181614]"
+              >
+                {link.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                runAuthenticated({ redirectTo: "/dashboard" });
+              }}
+              className="w-full rounded-[1.1rem] border border-black/6 bg-white px-4 py-3 text-left text-sm font-medium text-[#181614]"
+            >
+              Dashboard
+            </button>
+            {!user && showStartFree ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  runAuthenticated({ redirectTo: "/dashboard" });
+                }}
+                className="w-full rounded-[1.1rem] border border-black/8 bg-white px-4 py-3 text-left text-sm font-semibold text-[#181614]"
+              >
+                Start Free
+              </button>
+            ) : null}
+            {user ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    router.push("/profile");
+                  }}
+                  className="w-full rounded-[1.1rem] border border-black/6 bg-white px-4 py-3 text-left text-sm font-medium text-[#181614]"
+                >
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    logout();
+                  }}
+                  className="w-full rounded-[1.1rem] border border-[#d7b3ac] bg-[#f9ece8] px-4 py-3 text-left text-sm font-medium text-[#8d4d44]"
+                >
+                  Logout
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </motion.header>
   );
 }

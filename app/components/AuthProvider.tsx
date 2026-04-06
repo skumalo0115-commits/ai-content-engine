@@ -11,10 +11,12 @@ import {
   updateProfile as updateFirebaseProfile,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile } from "@/app/lib/account-store";
+import { activateAccountSubscription, deactivateAccountSubscription, ensureAccountRecord, subscribeToAccountRecord, updateAccountProfile, updateAccountUsageCount } from "@/app/lib/account-store";
+import { syncAccountStateToServer } from "@/app/lib/account-sync";
 import { ensureFirebaseAuthPersistence, firebaseAuth, googleAuthProvider, isFirebaseConfigured } from "@/app/lib/firebase";
 import type { AccountProfile } from "@/app/lib/types";
-import { clearStoredSubscription, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearLegacyUsageState, getHighestStoredUsageCount, getStoredSubscription, setStoredPlan, setStoredSubscription, setUsageAccountScope, setUsageStateCount } from "@/app/lib/usage";
+import { getSavedStrategies, hydrateSavedStrategies } from "@/app/lib/saved-content";
 import { EyeIcon, EyeOffIcon, GoogleIcon } from "./Icons";
 
 export type AuthUser = {
@@ -55,6 +57,7 @@ type StoredProfileOverride = {
 type StoredProfileMap = Record<string, StoredProfileOverride>;
 
 const PROFILE_STORAGE_KEY = "ace-auth-profile-overrides";
+const SKIP_AUTH_MODAL_ONCE_KEY = "ace-skip-auth-modal-once";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -237,11 +240,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       if (!response.ok) {
+        if (response.status >= 400 && response.status < 500) {
+          clearAllStoredBillingState();
+          setStoredPlan("free");
+          subscriptionSyncRef.current = null;
+          await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
+        }
         return;
       }
 
       if (!data.active) {
-        clearStoredSubscription();
+        clearAllStoredBillingState();
         setStoredPlan("free");
         subscriptionSyncRef.current = null;
         await deactivateAccountSubscription(nextUser.uid, profile).catch(() => undefined);
@@ -303,7 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUsageAccountScope(nextFirebaseUser?.uid || null);
 
           if (!nextFirebaseUser) {
-            clearStoredSubscription();
+            clearAllStoredBillingState();
             setStoredPlan("free");
             subscriptionSyncRef.current = null;
             setUser(null);
@@ -312,6 +321,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           const fallbackUser = toAuthUser(nextFirebaseUser);
+          clearAllStoredBillingState();
+          setStoredPlan("free");
+          subscriptionSyncRef.current = null;
           setUser(fallbackUser);
           setIsAuthReady(true);
 
@@ -345,7 +357,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
               setStoredPlan("free");
               subscriptionSyncRef.current = null;
-              clearStoredSubscription();
+              clearAllStoredBillingState();
             }
             setUser(nextUserWithProfile);
           });
@@ -378,6 +390,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const continueAfterAuth = useCallback(
     (authenticatedFirebaseUser: FirebaseUser) => {
       const nextUser = toAuthUser(authenticatedFirebaseUser);
+      setUsageAccountScope(authenticatedFirebaseUser.uid);
+      clearAllStoredBillingState();
+      setStoredPlan("free");
+      subscriptionSyncRef.current = null;
       setUser(nextUser);
       void ensureAccountRecord(authenticatedFirebaseUser.uid, toAccountProfile(nextUser)).catch(() => undefined);
       const pending = pendingRequestRef.current;
@@ -431,10 +447,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(SKIP_AUTH_MODAL_ONCE_KEY, "1");
+      }
+      pendingRequestRef.current = null;
+      setIsOpen(false);
+      setError(null);
+      setGoogleNotice(null);
+      setShowPassword(false);
+      setIsSubmitting(false);
+
       if (firebaseAuth) {
         await signOut(firebaseAuth);
       }
     } finally {
+      clearAllStoredBillingState();
       setUsageAccountScope(null);
       setUser(null);
       router.push("/");
@@ -569,22 +596,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(7,10,18,0.58)] px-4 py-10"
+          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-[rgba(7,10,18,0.58)] px-4 py-4 sm:items-center sm:py-10"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               closeModal();
             }
           }}
         >
-          <div className="w-full max-w-[28rem] rounded-[2rem] border border-black/8 bg-[#fbf8f3] p-6 shadow-[0_30px_90px_rgba(7,10,18,0.24)] sm:p-7">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[28rem] overflow-y-auto rounded-[1.6rem] border border-black/8 bg-[#fbf8f3] p-5 shadow-[0_30px_90px_rgba(7,10,18,0.24)] sm:max-h-[calc(100vh-5rem)] sm:rounded-[2rem] sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[0.7rem] uppercase tracking-[0.28em] text-[#20584f]">Account Access</p>
                 <h2 className="mt-2 text-3xl font-semibold text-[#181614]">{mode === "signup" ? "Create your account" : "Welcome back"}</h2>
                 <p className="mt-2 text-sm leading-6 text-[#645b51]">
                   {mode === "signup"
-                    ? "Create a real Firebase account with email and password, or continue with Google."
-                    : "Log in with your Firebase account to continue to the exact page you clicked."}
+                    ? "Create your account with email and password. Google sign-in is optional."
+                    : "Log in with your email and password, or use Google if you prefer."}
                 </p>
               </div>
               <button type="button" onClick={closeModal} className="rounded-full border border-black/8 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#3d3935]">
@@ -607,22 +634,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               >
                 Log in
               </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void continueWithGoogle()}
-              disabled={isSubmitting}
-              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <GoogleIcon className="h-5 w-5" />
-              {isSubmitting ? "Working..." : "Continue with Google"}
-            </button>
-
-            <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-[#8d8479]">
-              <span className="h-px flex-1 bg-black/8" />
-              Or use email
-              <span className="h-px flex-1 bg-black/8" />
             </div>
 
             <form className="mt-5 space-y-4" onSubmit={(event) => void submit(event)}>
@@ -711,9 +722,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 disabled={isSubmitting}
                 className="interactive-pop w-full rounded-[1.2rem] bg-[#181614] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Working..." : mode === "signup" ? "Create account" : "Log in"}
+                {mode === "signup" ? "Create account" : "Log in"}
               </button>
             </form>
+
+            <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-[#8d8479]">
+              <span className="h-px flex-1 bg-black/8" />
+              Or use Google
+              <span className="h-px flex-1 bg-black/8" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void continueWithGoogle()}
+              disabled={isSubmitting}
+              className="interactive-pop mt-5 inline-flex w-full items-center justify-center gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 text-sm font-semibold text-[#181614] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <GoogleIcon className="h-5 w-5" />
+              Continue with Google
+            </button>
           </div>
         </div>
       ) : null}

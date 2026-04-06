@@ -113,6 +113,16 @@ function tokenize(value: string) {
     .filter((token) => token.length > 2);
 }
 
+function hashString(value: string) {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
 function buildSearchText(payload: GeneratePayload, strategy: GeneratedStrategy, suggestedTopics: string[]) {
   return [
     payload.businessType,
@@ -137,6 +147,14 @@ function toVideoRecommendation(video: CuratedVideo): VideoRecommendation {
   };
 }
 
+function toTopicSearchRecommendation(topic: string): VideoRecommendation {
+  return {
+    title: topic,
+    url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic)}`,
+    channel: "YouTube search",
+  };
+}
+
 export function getDefaultVideoRecommendations(): VideoRecommendation[] {
   return curatedVideos.slice(0, 4).map(toVideoRecommendation);
 }
@@ -150,31 +168,55 @@ export function pickCuratedVideoRecommendations({
   strategy: GeneratedStrategy;
   suggestedTopics: string[];
 }): VideoRecommendation[] {
+  const seedSource = [payload.businessType, payload.targetAudience, payload.goal, strategy.title, ...suggestedTopics].join("|");
+  const seed = hashString(seedSource);
   const tokens = tokenize(buildSearchText(payload, strategy, suggestedTopics));
   const uniqueTokens = new Set(tokens);
 
   const ranked = curatedVideos
     .map((video) => {
-      const score = video.keywords.reduce((total, keyword) => {
+      const keywordScore = video.keywords.reduce((total, keyword) => {
         const keywordTokens = tokenize(keyword);
         return total + keywordTokens.filter((token) => uniqueTokens.has(token)).length;
       }, 0);
 
+      const directPhraseScore = suggestedTopics.reduce((total, topic) => {
+        const normalizedTopic = topic.toLowerCase();
+        return total + (video.title.toLowerCase().includes(normalizedTopic) ? 4 : 0);
+      }, 0);
+
+      const businessFitScore = video.keywords.some((keyword) => payload.businessType.toLowerCase().includes(keyword) || payload.goal.toLowerCase().includes(keyword))
+        ? 3
+        : 0;
+
+      const score = keywordScore + directPhraseScore + businessFitScore;
+
       return { video, score };
     })
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
 
-  const candidatePool = ranked.filter(({ score }, index) => score > 0 || index < 6).slice(0, 8);
-  const shuffledPool = [...candidatePool];
+      return hashString(`${seed}:${a.video.url}`) - hashString(`${seed}:${b.video.url}`);
+    });
 
-  for (let index = shuffledPool.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffledPool[index], shuffledPool[randomIndex]] = [shuffledPool[randomIndex], shuffledPool[index]];
-  }
+  const candidatePool = ranked.filter(({ score }) => score > 0);
+  const sortedPool = (candidatePool.length > 0 ? candidatePool : ranked)
+    .slice(0, 10)
+    .sort((a, b) => hashString(`${seed}:${a.video.url}`) - hashString(`${seed}:${b.video.url}`));
 
-  const anchor = candidatePool[0] ? [candidatePool[0]] : [];
-  const rotatingCandidates = shuffledPool.filter(({ video }) => !anchor.some((entry) => entry.video.url === video.url));
-  const selected = [...anchor, ...rotatingCandidates].slice(0, 4).map(({ video }) => toVideoRecommendation(video));
+  const exactSearches = suggestedTopics
+    .slice(0, 2)
+    .map((topic) => topic.trim())
+    .filter(Boolean)
+    .map(toTopicSearchRecommendation);
+
+  const curatedMatches = sortedPool
+    .slice(0, Math.max(0, 4 - exactSearches.length))
+    .map(({ video }) => toVideoRecommendation(video));
+
+  const selected = [...exactSearches, ...curatedMatches].slice(0, 4);
 
   return selected.length > 0 ? selected : getDefaultVideoRecommendations();
 }

@@ -1,20 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, startTransition, useEffect, useEffectEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { activateAccountSubscription } from "@/app/lib/account-store";
+import { activateAccountSubscription, subscribeToAccountRecord, updateAccountUsageCount } from "@/app/lib/account-store";
 import { useAuth } from "@/app/components/AuthProvider";
 import { GeneratedStrategyCard } from "@/app/components/GeneratedStrategyCard";
 import { InputForm } from "@/app/components/InputForm";
+import { MobileScrollHint } from "@/app/components/MobileScrollHint";
 import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
-import { deleteSavedStrategy, getSavedStrategies, hasSavedStrategy, saveGeneratedStrategy } from "@/app/lib/saved-content";
-import { saveGeneratedCalendar } from "@/app/lib/saved-content";
+import { getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, replaceSavedStrategies, saveGeneratedCalendar, saveGeneratedStrategy } from "@/app/lib/saved-content";
+import { fetchAccountStateFromServer, syncAccountStateToServer } from "@/app/lib/account-sync";
+import { clearPinnedDashboardOutput, getPinnedDashboardOutput, setPinnedDashboardOutput } from "@/app/lib/pinned-output";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
-import { clearStoredSubscription, getRemainingFreeGenerations, getStoredPlan, incrementFreeGeneration, setStoredPlan, setStoredSubscription } from "@/app/lib/usage";
+import { clearAllStoredBillingState, clearLegacyUsageState, clearStoredSubscription, getHighestStoredUsageCount, getStoredPlan, getUsageState, setStoredPlan, setStoredSubscription, setUsageStateCount } from "@/app/lib/usage";
 import { getDefaultVideoRecommendations } from "@/app/lib/video-library";
 import type { GenerateCalendarResponse, GeneratedCalendar, GenerateContentResponse, GeneratedStrategy, GeneratePayload, PlanKey, SavedStrategy } from "@/app/lib/types";
 
@@ -53,6 +55,8 @@ const lockedPreviewStrategy: GeneratedStrategy = {
   videoRecommendations: starterStrategy.videoRecommendations,
 };
 
+const testProModeKey = "ace-dashboard-test-pro-mode-v1";
+
 function waitFor(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -67,6 +71,7 @@ function DashboardPageInner() {
   const [lastBrief, setLastBrief] = useState<GeneratePayload | null>(null);
   const [plan, setPlan] = useState<PlanKey>("free");
   const [remainingFreeGenerations, setRemainingFreeGenerations] = useState(FREE_DAILY_GENERATIONS);
+  const [accountUsageCount, setAccountUsageCount] = useState(() => getUsageState().count);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sourceLabel, setSourceLabel] = useState<string>("Platform playbook");
@@ -78,13 +83,34 @@ function DashboardPageInner() {
   const [activeCalendarBrief, setActiveCalendarBrief] = useState<GeneratePayload | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
+  const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
+  const [undoDeleteState, setUndoDeleteState] = useState<{ id: number; entry: SavedStrategy; previousEntries: SavedStrategy[] } | null>(null);
+  const [hiddenSavedIds, setHiddenSavedIds] = useState<string[]>([]);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
+  const [isTestProMode, setIsTestProMode] = useState(false);
+  const [hasDismissedScrollHint, setHasDismissedScrollHint] = useState(false);
+
+  const effectivePlan: PlanKey = plan === "pro" || isTestProMode ? "pro" : "free";
+  const visibleSavedStrategies = savedStrategies.filter((item) => !hiddenSavedIds.includes(item.id));
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
     setPlan(nextPlan);
-    setRemainingFreeGenerations(nextPlan === "pro" ? FREE_DAILY_GENERATIONS : getRemainingFreeGenerations());
     const nextSaved = getSavedStrategies();
+    const nextPinnedOutput = getPinnedDashboardOutput();
     setSavedStrategies(nextSaved);
+    if (nextPinnedOutput) {
+      setStrategy(nextPinnedOutput.strategy);
+      setLastBrief(nextPinnedOutput.brief);
+      setSourceLabel(nextPinnedOutput.sourceLabel);
+      setHasPinnedOutput(true);
+    } else {
+      setStrategy(starterStrategy);
+      setLastBrief(null);
+      setSourceLabel("Platform playbook");
+      setHasPinnedOutput(false);
+    }
     setExpandedSavedId((currentId) => {
       if (currentId && nextSaved.some((item) => item.id === currentId)) {
         return currentId;
@@ -95,7 +121,12 @@ function DashboardPageInner() {
   });
 
   const verifyCheckout = useEffectEvent(async (sessionId: string) => {
+    if (!user) {
+      return;
+    }
+
     let didActivate = false;
+    let shouldShowPendingNotice = true;
 
     try {
       for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -115,7 +146,14 @@ function DashboardPageInner() {
           error?: string;
         };
 
-        if (response.ok && data.active && typeof data.customerId === "string" && typeof data.status === "string") {
+        if (
+          response.ok &&
+          data.active &&
+          typeof data.customerId === "string" &&
+          typeof data.status === "string" &&
+          typeof data.accountUid === "string" &&
+          data.accountUid === user.uid
+        ) {
           const nextSubscription = {
             provider: "paystack" as const,
             customerId: data.customerId,
@@ -148,16 +186,28 @@ function DashboardPageInner() {
           break;
         }
 
+        if (response.ok && data.active && data.accountUid && data.accountUid !== user.uid) {
+          clearAllStoredBillingState();
+          setPlan("free");
+          setError("This checkout belongs to a different account. Please sign in with the account that started the payment.");
+          shouldShowPendingNotice = false;
+          break;
+        }
+
         if (!data.pending) {
+          clearAllStoredBillingState();
+          setPlan("free");
           throw new Error(data.error || "Your payment was approved, but Pro could not be unlocked yet.");
         }
 
         await waitFor(1200 * (attempt + 1));
       }
 
-      if (!didActivate) {
+      if (!didActivate && shouldShowPendingNotice) {
         setError("Your payment is still syncing with Paystack. Please refresh the dashboard in a few seconds if Pro does not appear yet.");
       }
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : "Your payment could not be verified.");
     } finally {
       router.replace("/dashboard");
     }
@@ -168,13 +218,203 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setIsTestProMode(window.localStorage.getItem(testProModeKey) === "true");
+  }, []);
+
+  useEffect(() => {
     if (isAuthReady) {
       syncClientState();
     }
   }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
+    setRemainingFreeGenerations(effectivePlan === "pro" ? FREE_DAILY_GENERATIONS : Math.max(0, FREE_DAILY_GENERATIONS - accountUsageCount));
+  }, [accountUsageCount, effectivePlan]);
+
+  useEffect(() => {
+    if (!scheduleNotice || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setScheduleNotice(null);
+    }, 8000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [scheduleNotice]);
+
+  useEffect(() => {
+    if (!undoDeleteState || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setUndoDeleteState(null);
+    }, 8000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [undoDeleteState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setHasDismissedScrollHint(false);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateScrollHint = () => {
+      const pageHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        document.documentElement.offsetHeight,
+        document.body.offsetHeight,
+      );
+      const remainingScroll = pageHeight - window.innerHeight - window.scrollY;
+      const canScrollDown = remainingScroll > 80;
+      const nearTop = window.scrollY < 48;
+
+      if (window.scrollY > 24) {
+        setHasDismissedScrollHint(true);
+      }
+
+      setShowScrollHint(!isCalendarOpen && !hasDismissedScrollHint && canScrollDown && nearTop);
+    };
+
+    updateScrollHint();
+    const observer = new MutationObserver(() => {
+      window.requestAnimationFrame(updateScrollHint);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    window.addEventListener("scroll", updateScrollHint, { passive: true });
+    window.addEventListener("resize", updateScrollHint);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", updateScrollHint);
+      window.removeEventListener("resize", updateScrollHint);
+    };
+  }, [activeView, expandedSavedId, hasDismissedScrollHint, isCalendarOpen, strategy.title, visibleSavedStrategies.length]);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedStrategies(getSavedStrategies());
+      return;
+    }
+
+    let isCancelled = false;
+
+    void fetchAccountStateFromServer()
+      .then(async (initialResult) => {
+        const localSavedStrategies = getSavedStrategies();
+        const localUsageCount = getHighestStoredUsageCount(user.uid);
+
+        if (localSavedStrategies.length > 0 || localUsageCount > 0) {
+          const syncPayload: { savedContent?: SavedStrategy[]; usageCount?: number } = {};
+
+          if (localSavedStrategies.length > 0) {
+            syncPayload.savedContent = localSavedStrategies;
+          }
+
+          if (localUsageCount > 0) {
+            syncPayload.usageCount = localUsageCount;
+          }
+
+          await syncAccountStateToServer(syncPayload).catch(() => undefined);
+        }
+
+        const result = localSavedStrategies.length > 0 || localUsageCount > 0 ? await fetchAccountStateFromServer().catch(() => initialResult) : initialResult;
+
+        if (isCancelled || !result?.record) {
+          return;
+        }
+
+        const remoteRecord = result.record;
+        const nextUsageCount = Math.max(remoteRecord.usageCount, localUsageCount);
+
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+
+        if (localUsageCount > remoteRecord.usageCount) {
+          void syncAccountStateToServer({ usageCount: localUsageCount })
+            .catch(() => updateAccountUsageCount(user.uid, localUsageCount))
+            .then(() => clearLegacyUsageState())
+            .catch(() => undefined);
+        } else if (nextUsageCount > 0) {
+          clearLegacyUsageState();
+        }
+
+        void hydrateSavedStrategies(remoteRecord.savedContent).then((entries) => {
+          if (isCancelled) {
+            return;
+          }
+
+          setSavedStrategies(entries);
+          setExpandedSavedId((currentId) => (currentId && entries.some((item) => item.id === currentId) ? currentId : null));
+        });
+      })
+      .catch(() => undefined);
+
+    const unsubscribe = subscribeToAccountRecord(
+      user.uid,
+      {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        company: user.company,
+        role: user.role,
+      },
+      (record) => {
+        if (!record) {
+          setSavedStrategies(getSavedStrategies());
+          return;
+        }
+
+        const localUsageCount = getHighestStoredUsageCount(user.uid);
+        const nextUsageCount = Math.max(record.usageCount, localUsageCount);
+
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+
+        if (localUsageCount > record.usageCount) {
+          void syncAccountStateToServer({ usageCount: localUsageCount })
+            .catch(() => updateAccountUsageCount(user.uid, localUsageCount))
+            .then(() => clearLegacyUsageState())
+            .catch(() => undefined);
+        } else if (nextUsageCount > 0) {
+          clearLegacyUsageState();
+        }
+
+        void hydrateSavedStrategies(record.savedContent).then((entries) => {
+          setSavedStrategies(entries);
+          setExpandedSavedId((currentId) => (currentId && entries.some((item) => item.id === currentId) ? currentId : null));
+        });
+      },
+    );
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (isAuthReady && !user) {
+      if (typeof window !== "undefined" && window.sessionStorage.getItem("ace-skip-auth-modal-once") === "1") {
+        window.sessionStorage.removeItem("ace-skip-auth-modal-once");
+        return;
+      }
+
       openAuthModal({ mode: "signup", redirectTo: "/dashboard", closeRedirectTo: "/" });
     }
   }, [isAuthReady, openAuthModal, user]);
@@ -183,7 +423,7 @@ function DashboardPageInner() {
     const sessionId = searchParams.get("reference") || searchParams.get("trxref");
     const checkoutState = searchParams.get("checkout");
 
-    if (sessionId && isAuthReady) {
+    if (sessionId && isAuthReady && user) {
       void verifyCheckout(sessionId);
       return;
     }
@@ -193,15 +433,44 @@ function DashboardPageInner() {
     }
 
     if (checkoutState === "cancelled") {
+      clearAllStoredBillingState();
       clearStoredSubscription();
       setStoredPlan("free");
       syncClientState();
     }
-  }, [isAuthReady, searchParams]);
+  }, [isAuthReady, searchParams, user]);
 
-  const isLocked = plan !== "pro" && remainingFreeGenerations <= 0;
+  const isLocked = effectivePlan !== "pro" && remainingFreeGenerations <= 0;
   const canSaveCurrentStrategy = Boolean(lastBrief) && strategy.title !== starterStrategy.title && !isLocked;
   const currentStrategyAlreadySaved = lastBrief ? hasSavedStrategy({ brief: lastBrief, strategy }) : false;
+
+  function handleResetGeneratedOutput() {
+    clearPinnedDashboardOutput();
+    setStrategy(starterStrategy);
+    setLastBrief(null);
+    setSourceLabel("Platform playbook");
+    setHasPinnedOutput(false);
+    setError(null);
+    setActiveView("generate");
+  }
+
+  function handleActivateTestPro() {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(testProModeKey, "true");
+    }
+
+    setIsTestProMode(true);
+    setError(null);
+  }
+
+  function handleDeactivateTestPro() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(testProModeKey);
+    }
+
+    setIsTestProMode(false);
+    setError(null);
+  }
 
   async function handleGenerate(payload: { businessType: string; targetAudience: string; goal: string }) {
     setLastBrief(payload);
@@ -230,15 +499,27 @@ function DashboardPageInner() {
         throw new Error(data.error || "Could not generate content right now.");
       }
 
-      if (plan !== "pro") {
-        const nextRemaining = incrementFreeGeneration();
-        setRemainingFreeGenerations(nextRemaining);
+      const nextSourceLabel = `Live AI: ${data.meta?.model || "OpenRouter"}`;
+
+      if (effectivePlan !== "pro" && user) {
+        const nextUsageCount = accountUsageCount + 1;
+        setAccountUsageCount(nextUsageCount);
+        setUsageStateCount(nextUsageCount);
+        void syncAccountStateToServer({ usageCount: nextUsageCount })
+          .catch(() => updateAccountUsageCount(user.uid, nextUsageCount))
+          .catch(() => undefined);
       }
 
       startTransition(() => {
         setStrategy(data.strategy);
-        setSourceLabel(`Live AI: ${data.meta?.model || "OpenRouter"}`);
+        setSourceLabel(nextSourceLabel);
       });
+      setPinnedDashboardOutput({
+        brief: payload,
+        strategy: data.strategy,
+        sourceLabel: nextSourceLabel,
+      });
+      setHasPinnedOutput(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate content right now.");
     } finally {
@@ -246,33 +527,67 @@ function DashboardPageInner() {
     }
   }
 
-  function handleSaveStrategy() {
+  async function handleSaveStrategy() {
     if (!lastBrief || !canSaveCurrentStrategy) {
       return;
     }
 
-    const { nextEntries } = saveGeneratedStrategy({ brief: lastBrief, strategy });
+    const { nextEntries } = await saveGeneratedStrategy({ brief: lastBrief, strategy });
     setSavedStrategies(nextEntries);
     setExpandedSavedId(null);
     setActiveView("saved");
   }
 
-  function handleDeleteSavedStrategy(id: string) {
-    const nextEntries = deleteSavedStrategy(id);
+  async function handleDeleteSavedStrategy(entry: SavedStrategy) {
+    const previousEntries = savedStrategies;
+    const nextEntries = previousEntries.filter((savedEntry) => savedEntry.id !== entry.id);
+
+    setHiddenSavedIds((currentIds) => (currentIds.includes(entry.id) ? currentIds : [...currentIds, entry.id]));
     setSavedStrategies(nextEntries);
-    setExpandedSavedId((currentId) => (currentId === id ? null : currentId));
-    setCalendarTargetId((currentId) => (currentId === id ? null : currentId));
-    setActiveCalendar((currentCalendar) => (calendarTargetId === id ? null : currentCalendar));
+    setExpandedSavedId((currentId) => (currentId === entry.id ? null : currentId));
+    setCalendarTargetId((currentId) => (currentId === entry.id ? null : currentId));
+    setActiveCalendar((currentCalendar) => (calendarTargetId === entry.id ? null : currentCalendar));
+    setUndoDeleteState({ id: Date.now(), entry, previousEntries });
+
+    try {
+      await replaceSavedStrategies(nextEntries);
+    } catch (deleteError) {
+      setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== entry.id));
+      setSavedStrategies(previousEntries);
+      setUndoDeleteState(null);
+      setError(deleteError instanceof Error ? deleteError.message : "The saved content could not be deleted right now.");
+    }
+  }
+
+  async function handleUndoDelete() {
+    if (!undoDeleteState) {
+      return;
+    }
+
+    const restoredEntries = undoDeleteState.previousEntries;
+    const restoredEntryId = undoDeleteState.entry.id;
+    setSavedStrategies(restoredEntries);
+    setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== restoredEntryId));
+    setUndoDeleteState(null);
+
+    try {
+      await replaceSavedStrategies(restoredEntries);
+    } catch (restoreError) {
+      setError(restoreError instanceof Error ? restoreError.message : "The saved content could not be restored right now.");
+    }
   }
 
   async function handleOpenCalendar(item: SavedStrategy) {
-    if (plan !== "pro") {
-      setError("Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.");
+    if (effectivePlan !== "pro") {
+      setScheduleNotice({
+        id: Date.now(),
+        message: "Upgrade to Pro to unlock the 14-day AI content calendar for saved strategies.",
+      });
       setIsCalendarOpen(false);
       return;
     }
 
-    if (item.calendar) {
+    if (item.calendar?.entries?.length) {
       setCalendarTargetId(item.id);
       setActiveCalendarBrief(item.brief);
       setActiveCalendar(item.calendar);
@@ -282,6 +597,7 @@ function DashboardPageInner() {
 
     setCalendarTargetId(item.id);
     setActiveCalendarBrief(item.brief);
+    setActiveCalendar(null);
     setIsCalendarOpen(true);
     setIsCalendarLoading(true);
     setError(null);
@@ -305,7 +621,7 @@ function DashboardPageInner() {
       }
 
       setActiveCalendar(data.calendar);
-      const nextEntries = saveGeneratedCalendar(item.id, data.calendar);
+      const nextEntries = await saveGeneratedCalendar(item.id, data.calendar);
       setSavedStrategies(nextEntries);
     } catch (calendarError) {
       setActiveCalendar(null);
@@ -315,7 +631,7 @@ function DashboardPageInner() {
     }
   }
 
-  const usageLabel = plan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
+  const usageLabel = effectivePlan === "pro" ? "Unlimited Pro generations" : `${remainingFreeGenerations} free generations left on this account`;
 
   return (
     <div className="relative min-h-screen text-[#181614]">
@@ -324,15 +640,18 @@ function DashboardPageInner() {
         style={{ backgroundImage: "url('/hero-slide-3.png')" }}
       />
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
-      <Navbar currentPlan={plan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} />
+      <Navbar currentPlan={effectivePlan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={effectivePlan} />
 
-      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[288px_1fr]">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 overflow-x-hidden px-4 py-6 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
         <Sidebar
-          currentPlan={plan === "pro" ? "Pro" : "Free"}
+          currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
           activeView={activeView}
-          savedCount={savedStrategies.length}
+          savedCount={visibleSavedStrategies.length}
           onChangeView={setActiveView}
+          isTestProMode={isTestProMode}
+          onActivateTestPro={handleActivateTestPro}
+          onDeactivateTestPro={handleDeactivateTestPro}
         />
 
         <main className="space-y-5">
@@ -362,19 +681,19 @@ function DashboardPageInner() {
 
           {activeView === "generate" && lastBrief ? (
             <div className="rounded-2xl border border-black/6 bg-white/85 p-5">
-              <p className="editorial-label text-xs">Latest brief captured on localhost</p>
+              <p className="editorial-label text-xs">Latest brief captured</p>
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.businessType}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.businessType}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.targetAudience}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.targetAudience}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
-                  <p className="mt-2 text-sm text-[#181614]">{lastBrief.goal}</p>
+                  <p className="mt-2 break-words text-sm text-[#181614]">{lastBrief.goal}</p>
                 </div>
               </div>
             </div>
@@ -386,7 +705,7 @@ function DashboardPageInner() {
                 onSubmit={handleGenerate}
                 isLoading={isLoading}
                 isDisabled={isLocked}
-                currentPlan={plan}
+                currentPlan={effectivePlan}
                 remainingFreeGenerations={remainingFreeGenerations}
               />
 
@@ -410,9 +729,12 @@ function DashboardPageInner() {
                   isLocked={isLocked}
                   showDetailSections={strategy.title !== starterStrategy.title && strategy.title !== lockedPreviewStrategy.title}
                   showSaveButton={canSaveCurrentStrategy}
-                  onSave={handleSaveStrategy}
+                  onSave={() => void handleSaveStrategy()}
                   saveLabel={currentStrategyAlreadySaved ? "Already saved" : "Save to Saved Content"}
                   isSaveDisabled={currentStrategyAlreadySaved}
+                  showPinnedBadge={!isLocked && hasPinnedOutput}
+                  onReset={!isLocked && hasPinnedOutput ? handleResetGeneratedOutput : undefined}
+                  resetLabel="Clear"
                 />
               </section>
             </>
@@ -437,26 +759,26 @@ function DashboardPageInner() {
                 </div>
               </div>
 
-              {savedStrategies.length > 0 ? (
+              {visibleSavedStrategies.length > 0 ? (
                 <div className="space-y-4">
-                  {savedStrategies.map((item) => {
+                  {visibleSavedStrategies.map((item) => {
                     const isExpanded = item.id === expandedSavedId;
 
                     if (isExpanded) {
                       return (
                         <div key={item.id} className="relative">
-                          <div className="absolute right-4 top-4 z-10 flex gap-2">
+                          <div className="relative z-10 mb-4 flex flex-wrap justify-end gap-2 sm:absolute sm:right-4 sm:top-4 sm:mb-0">
                             <button
                               type="button"
                               onClick={() => setExpandedSavedId(null)}
-                              className="rounded-full border border-white/14 bg-black/70 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/85"
+                              className="w-full rounded-full border border-white/14 bg-black/70 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/85 sm:w-auto"
                             >
                               Back
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteSavedStrategy(item.id)}
-                              className="rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919]"
+                              onClick={() => void handleDeleteSavedStrategy(item)}
+                              className="w-full rounded-full border border-[#ff8e8e]/25 bg-[#3d1212]/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#551919] sm:w-auto"
                             >
                               Delete
                             </button>
@@ -467,35 +789,35 @@ function DashboardPageInner() {
                     }
 
                     return (
-                      <div key={item.id} className="rounded-2xl border border-black/6 bg-white/88 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.05)] transition hover:border-black/12 hover:bg-white">
+                      <div key={item.id} className="rounded-2xl border border-black/6 bg-white/88 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.05)] transition hover:border-black/12 hover:bg-white sm:p-5">
                         <div className="flex flex-col gap-4">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                               <p className="editorial-label text-xs">Selected saved brief</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-row flex-wrap gap-2">
                               <button
                                 type="button"
                                 onClick={() => void handleOpenCalendar(item)}
-                                className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                                  plan === "pro"
+                                className={`inline-flex items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                                  effectivePlan === "pro"
                                     ? "border-[#20584f]/18 bg-[#e6efeb] text-[#20584f] hover:bg-[#dce9e4]"
                                     : "border-[#ded6cc] bg-[#f3eee8] text-[#998f84] hover:bg-[#eee7de]"
                                 }`}
                               >
-                                {plan === "pro" ? "Schedule" : "Schedule Pro"}
+                                {effectivePlan === "pro" ? "Schedule" : "Schedule Pro"}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setExpandedSavedId(item.id)}
-                                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2b2723]"
+                                className="interactive-pop inline-flex items-center justify-center rounded-full border border-black/8 bg-[#181614] px-3 py-2 text-xs font-semibold text-white hover:bg-[#2b2723] sm:px-4 sm:text-sm"
                               >
                                 View
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteSavedStrategy(item.id)}
-                                className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-2 text-sm font-semibold text-[#7c5645] transition hover:bg-[#efd9d3]"
+                                onClick={() => void handleDeleteSavedStrategy(item)}
+                                className="inline-flex items-center justify-center rounded-full border border-[#d7b3ac] bg-[#f4e5e1] px-3 py-2 text-xs font-semibold text-[#7c5645] transition hover:bg-[#efd9d3] sm:px-4 sm:text-sm"
                               >
                                 Delete
                               </button>
@@ -505,15 +827,15 @@ function DashboardPageInner() {
                           <div className="grid gap-4 md:grid-cols-3">
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Business Type</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.businessType}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.businessType}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Target Audience</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.targetAudience}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.targetAudience}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase tracking-[0.18em] text-[#7a7269]">Content Goal</p>
-                              <p className="mt-2 text-sm text-[#181614]">{item.brief.goal}</p>
+                              <p className="mt-2 break-words text-sm text-[#181614]">{item.brief.goal}</p>
                             </div>
                           </div>
                         </div>
@@ -559,6 +881,44 @@ function DashboardPageInner() {
         brief={activeCalendarBrief}
         isLoading={isCalendarLoading}
       />
+      <AnimatePresence>
+        {scheduleNotice ? (
+          <motion.div
+            key={scheduleNotice.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed inset-x-0 top-20 z-40 flex justify-center px-4"
+          >
+            <div className="max-w-md rounded-[1.2rem] border border-[#d7b3ac] bg-[#fff5f1] px-4 py-3 text-center text-sm font-medium text-[#7c5645] shadow-[0_16px_40px_rgba(24,22,20,0.12)]">
+              {scheduleNotice.message}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
+        {undoDeleteState ? (
+          <motion.div
+            key={undoDeleteState.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4"
+          >
+            <div className="flex w-full max-w-lg flex-col gap-3 rounded-[1.2rem] border border-black/8 bg-white px-4 py-3 shadow-[0_16px_40px_rgba(24,22,20,0.12)] sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-[#181614]">Saved content removed.</p>
+              <button
+                type="button"
+                onClick={() => void handleUndoDelete()}
+                className="inline-flex items-center justify-center rounded-full bg-[#181614] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2b2723]"
+              >
+                Undo
+              </button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence>{showScrollHint ? <MobileScrollHint /> : null}</AnimatePresence>
     </div>
   );
 }

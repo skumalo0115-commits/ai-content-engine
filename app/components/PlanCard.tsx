@@ -51,7 +51,10 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ customerId: subscription.customerId }),
+        body: JSON.stringify({
+          customerId: subscription.customerId,
+          subscriptionCode: subscription.subscriptionCode,
+        }),
       });
 
       const data = (await response.json()) as { cancelled?: boolean; url?: string; error?: string };
@@ -110,7 +113,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
           <div className="space-y-3">
             <div className="rounded-[1.3rem] border border-[#cfdccd] bg-[#edf5f0] p-4 text-sm text-[#20584f]">
               <p className="font-semibold">Subscription active</p>
-              <p className="mt-2 leading-6">Pro is active on this browser. Unlimited generations and the 14-day AI calendar are ready to use.</p>
+              <p className="mt-2 leading-6">Pro is active on this account. Unlimited generations and the 14-day AI calendar are ready to use.</p>
             </div>
             <button
               type="button"
@@ -118,7 +121,7 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
               disabled={isCancelling}
               className="interactive-pop inline-flex w-full items-center justify-center rounded-2xl border border-[#d7b3ac] bg-[#f4e5e1] px-4 py-3 text-sm font-semibold text-[#7c5645] hover:bg-[#efd9d3]"
             >
-              {isCancelling ? "Opening..." : "Manage Subscription"}
+              Manage Subscription
             </button>
             <p className="text-xs leading-5 text-[#8c8378]">This opens Paystack&apos;s secure subscription page, where the customer can cancel future charges. Previous successful payments are not refundable.</p>
             {cancelError ? <p className="text-xs text-[#8b5b4d]">{cancelError}</p> : null}
