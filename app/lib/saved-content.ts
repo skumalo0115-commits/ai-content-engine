@@ -164,6 +164,43 @@ function setSavedContent(entries: SavedStrategy[]) {
   window.localStorage.setItem(getSavedContentStorageKey(), JSON.stringify(entries));
 }
 
+function clearLegacySavedContentSources() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(getGuestSavedContentStorageKey());
+  window.localStorage.removeItem(getLegacySavedContentStorageKey());
+}
+
+function getCurrentAccountUid() {
+  const activeUid = firebaseAuth.currentUser?.uid;
+
+  if (activeUid) {
+    return activeUid;
+  }
+
+  const scopedUid = getUsageAccountScope();
+  return scopedUid && scopedUid !== "guest" ? scopedUid : null;
+}
+
+async function persistSavedContent(entries: SavedStrategy[]) {
+  setSavedContent(entries);
+
+  const currentAccountUid = getCurrentAccountUid();
+  if (!currentAccountUid) {
+    return;
+  }
+
+  clearLegacySavedContentSources();
+
+  try {
+    await syncAccountStateToServer({ savedContent: entries });
+  } catch {
+    await updateAccountSavedContent(currentAccountUid, entries);
+  }
+}
+
 export function getSavedStrategies() {
   const scopedEntries = getSavedContentFromStorage();
   const guestEntries = getGuestSavedContentFromStorage();
