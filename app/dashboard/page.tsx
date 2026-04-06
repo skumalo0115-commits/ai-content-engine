@@ -12,7 +12,16 @@ import { Navbar } from "@/app/components/Navbar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { UpgradeButton } from "@/app/components/UpgradeButton";
 import { ContentCalendarPanel } from "@/app/components/ContentCalendarPanel";
-import { getSavedStrategies, hasSavedStrategy, hydrateSavedStrategies, replaceSavedStrategies, saveGeneratedCalendar, saveGeneratedStrategy } from "@/app/lib/saved-content";
+import {
+  getSavedStrategies,
+  hasSavedStrategy,
+  hydrateSavedStrategies,
+  markSavedStrategyDeleted,
+  replaceSavedStrategies,
+  restoreDeletedSavedStrategy,
+  saveGeneratedCalendar,
+  saveGeneratedStrategy,
+} from "@/app/lib/saved-content";
 import { fetchAccountStateFromServer, syncAccountStateToServer } from "@/app/lib/account-sync";
 import { clearPinnedDashboardOutput, getPinnedDashboardOutput, setPinnedDashboardOutput } from "@/app/lib/pinned-output";
 import { FREE_DAILY_GENERATIONS } from "@/app/lib/site";
@@ -542,6 +551,7 @@ function DashboardPageInner() {
     const previousEntries = savedStrategies;
     const nextEntries = previousEntries.filter((savedEntry) => savedEntry.id !== entry.id);
 
+    markSavedStrategyDeleted(entry.id);
     setHiddenSavedIds((currentIds) => (currentIds.includes(entry.id) ? currentIds : [...currentIds, entry.id]));
     setSavedStrategies(nextEntries);
     setExpandedSavedId((currentId) => (currentId === entry.id ? null : currentId));
@@ -552,6 +562,7 @@ function DashboardPageInner() {
     try {
       await replaceSavedStrategies(nextEntries);
     } catch (deleteError) {
+      restoreDeletedSavedStrategy(entry.id);
       setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== entry.id));
       setSavedStrategies(previousEntries);
       setUndoDeleteState(null);
@@ -566,6 +577,7 @@ function DashboardPageInner() {
 
     const restoredEntries = undoDeleteState.previousEntries;
     const restoredEntryId = undoDeleteState.entry.id;
+    restoreDeletedSavedStrategy(restoredEntryId);
     setSavedStrategies(restoredEntries);
     setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== restoredEntryId));
     setUndoDeleteState(null);

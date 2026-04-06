@@ -7,9 +7,14 @@ import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrate
 import { getUsageAccountScope } from "./usage";
 
 const savedContentKey = "ace-saved-content-v1";
+const deletedSavedContentKey = "ace-deleted-saved-content-v1";
 
 function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
+}
+
+function getDeletedSavedContentStorageKey() {
+  return `${deletedSavedContentKey}:${getUsageAccountScope()}`;
 }
 
 function hasScopedSavedContentStorage() {
@@ -156,6 +161,34 @@ function getGuestSavedContentFromStorage() {
   }
 }
 
+function getDeletedSavedContentIds() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const raw = window.localStorage.getItem(getDeletedSavedContentStorageKey());
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string" && item.length > 0) : [];
+  } catch {
+    window.localStorage.removeItem(getDeletedSavedContentStorageKey());
+    return [];
+  }
+}
+
+function setDeletedSavedContentIds(ids: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  window.localStorage.setItem(getDeletedSavedContentStorageKey(), JSON.stringify(uniqueIds));
+}
+
 function setSavedContent(entries: SavedStrategy[]) {
   if (typeof window === "undefined") {
     return;
@@ -206,7 +239,8 @@ export function getSavedStrategies() {
   const guestEntries = getGuestSavedContentFromStorage();
   const legacyEntries = getLegacySavedContentFromStorage();
   const entries = hasScopedSavedContentStorage() ? scopedEntries : guestEntries.length > 0 ? guestEntries : legacyEntries;
-  return entries.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const deletedIds = new Set(getDeletedSavedContentIds());
+  return entries.filter((entry) => !deletedIds.has(entry.id)).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
 export function hasSavedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
@@ -237,10 +271,11 @@ function mergeSavedContent(primaryEntries: SavedStrategy[], secondaryEntries: Sa
 export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
   const normalizedEntries = normalizeSavedContent(entries).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   const localEntries = mergeSavedContent(getSavedContentFromStorage(), [...getGuestSavedContentFromStorage(), ...getLegacySavedContentFromStorage()]);
+  const deletedIds = new Set(getDeletedSavedContentIds());
   const currentAccountUid = getCurrentAccountUid();
 
   if (currentAccountUid) {
-    const mergedEntries = mergeSavedContent(localEntries, normalizedEntries);
+    const mergedEntries = mergeSavedContent(localEntries, normalizedEntries).filter((entry) => !deletedIds.has(entry.id));
     const hasRemoteChanges = JSON.stringify(normalizedEntries) !== JSON.stringify(mergedEntries);
     setSavedContent(mergedEntries);
     clearLegacySavedContentSources();
@@ -256,9 +291,27 @@ export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
     return mergedEntries;
   }
 
-  const mergedGuestEntries = mergeSavedContent(normalizedEntries, localEntries);
+  const mergedGuestEntries = mergeSavedContent(normalizedEntries, localEntries).filter((entry) => !deletedIds.has(entry.id));
   setSavedContent(mergedGuestEntries);
   return mergedGuestEntries;
+}
+
+export function markSavedStrategyDeleted(id: string) {
+  if (!id) {
+    return;
+  }
+
+  const nextIds = [...getDeletedSavedContentIds(), id];
+  setDeletedSavedContentIds(nextIds);
+}
+
+export function restoreDeletedSavedStrategy(id: string) {
+  if (!id) {
+    return;
+  }
+
+  const nextIds = getDeletedSavedContentIds().filter((entryId) => entryId !== id);
+  setDeletedSavedContentIds(nextIds);
 }
 
 export async function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
