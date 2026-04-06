@@ -642,7 +642,7 @@ function DashboardPageInner() {
       <div className="pointer-events-none fixed inset-0 -z-[9] bg-[rgba(244,240,232,0.82)]" />
       <Navbar currentPlan={effectivePlan === "pro" ? "Pro active" : "Free active"} usageLabel={usageLabel} showStartFree={false} planState={effectivePlan} />
 
-      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 overflow-x-hidden px-4 py-6 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-5 overflow-x-hidden px-4 pb-6 pt-4 sm:px-6 md:grid-cols-[288px_minmax(0,1fr)]">
         <Sidebar
           currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
