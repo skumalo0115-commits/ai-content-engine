@@ -39,7 +39,7 @@ export function Sidebar({
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="glass-panel w-full self-start rounded-[28px] p-5 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:w-72 md:overflow-y-auto"
+      className="glass-panel w-full self-start rounded-[28px] p-5 md:sticky md:top-20 md:h-fit md:w-72"
     >
       <div className="mb-5 rounded-[1.5rem] bg-[#f6f2eb] p-4">
         <p className="editorial-label text-xs">Launch Plan</p>
