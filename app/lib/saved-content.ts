@@ -7,16 +7,6 @@ import type { GeneratePayload, GeneratedCalendar, GeneratedStrategy, SavedStrate
 import { getUsageAccountScope } from "./usage";
 
 const savedContentKey = "ace-saved-content-v1";
-const usageScopeKey = "ace-auth-usage-scope-v1";
-
-function getSavedContentStorageKey() {
-  if (typeof window === "undefined") {
-    return `${savedContentKey}:guest`;
-  }
-
-  const scope = window.localStorage.getItem(usageScopeKey) || "guest";
-  return `${savedContentKey}:${scope}`;
-}
 
 function getSavedContentStorageKey() {
   return `${savedContentKey}:${getUsageAccountScope()}`;
@@ -210,11 +200,11 @@ function mergeSavedContent(primaryEntries: SavedStrategy[], secondaryEntries: Sa
 export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
   const normalizedEntries = normalizeSavedContent(entries).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   const localEntries = mergeSavedContent(getSavedContentFromStorage(), [...getGuestSavedContentFromStorage(), ...getLegacySavedContentFromStorage()]);
-  const mergedEntries = mergeSavedContent(normalizedEntries, localEntries);
-  const hasRemoteChanges = JSON.stringify(normalizedEntries) !== JSON.stringify(mergedEntries);
   const currentAccountUid = getCurrentAccountUid();
 
   if (currentAccountUid) {
+    const mergedEntries = mergeSavedContent(localEntries, normalizedEntries);
+    const hasRemoteChanges = JSON.stringify(normalizedEntries) !== JSON.stringify(mergedEntries);
     setSavedContent(mergedEntries);
     clearLegacySavedContentSources();
 
@@ -229,8 +219,9 @@ export async function hydrateSavedStrategies(entries: SavedStrategy[]) {
     return mergedEntries;
   }
 
-  setSavedContent(normalizedEntries);
-  return normalizedEntries;
+  const mergedGuestEntries = mergeSavedContent(normalizedEntries, localEntries);
+  setSavedContent(mergedGuestEntries);
+  return mergedGuestEntries;
 }
 
 export async function saveGeneratedStrategy(entry: { brief: GeneratePayload; strategy: GeneratedStrategy }) {
