@@ -85,11 +85,13 @@ function DashboardPageInner() {
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState<{ id: number; message: string } | null>(null);
   const [undoDeleteState, setUndoDeleteState] = useState<{ id: number; entry: SavedStrategy; previousEntries: SavedStrategy[] } | null>(null);
+  const [hiddenSavedIds, setHiddenSavedIds] = useState<string[]>([]);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [hasPinnedOutput, setHasPinnedOutput] = useState(false);
   const [isTestProMode, setIsTestProMode] = useState(false);
 
   const effectivePlan: PlanKey = plan === "pro" || isTestProMode ? "pro" : "free";
+  const visibleSavedStrategies = savedStrategies.filter((item) => !hiddenSavedIds.includes(item.id));
 
   const syncClientState = useEffectEvent(() => {
     const nextPlan = getStoredPlan();
@@ -262,21 +264,33 @@ function DashboardPageInner() {
     }
 
     const updateScrollHint = () => {
-      const remainingScroll = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      const pageHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        document.documentElement.offsetHeight,
+        document.body.offsetHeight,
+      );
+      const remainingScroll = pageHeight - window.innerHeight - window.scrollY;
       const canScrollDown = remainingScroll > 80;
       const nearTop = window.scrollY < 48;
       setShowScrollHint(!isCalendarOpen && canScrollDown && nearTop);
     };
 
     updateScrollHint();
+    const observer = new MutationObserver(() => {
+      window.requestAnimationFrame(updateScrollHint);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
     window.addEventListener("scroll", updateScrollHint, { passive: true });
     window.addEventListener("resize", updateScrollHint);
 
     return () => {
+      observer.disconnect();
       window.removeEventListener("scroll", updateScrollHint);
       window.removeEventListener("resize", updateScrollHint);
     };
-  }, [activeView, expandedSavedId, isCalendarOpen, savedStrategies.length, strategy.title]);
+  }, [activeView, expandedSavedId, isCalendarOpen, strategy.title, visibleSavedStrategies.length]);
 
   useEffect(() => {
     if (!user) {
@@ -505,6 +519,7 @@ function DashboardPageInner() {
     const previousEntries = savedStrategies;
     const nextEntries = previousEntries.filter((savedEntry) => savedEntry.id !== entry.id);
 
+    setHiddenSavedIds((currentIds) => (currentIds.includes(entry.id) ? currentIds : [...currentIds, entry.id]));
     setSavedStrategies(nextEntries);
     setExpandedSavedId((currentId) => (currentId === entry.id ? null : currentId));
     setCalendarTargetId((currentId) => (currentId === entry.id ? null : currentId));
@@ -514,6 +529,7 @@ function DashboardPageInner() {
     try {
       await replaceSavedStrategies(nextEntries);
     } catch (deleteError) {
+      setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== entry.id));
       setSavedStrategies(previousEntries);
       setUndoDeleteState(null);
       setError(deleteError instanceof Error ? deleteError.message : "The saved content could not be deleted right now.");
@@ -526,7 +542,9 @@ function DashboardPageInner() {
     }
 
     const restoredEntries = undoDeleteState.previousEntries;
+    const restoredEntryId = undoDeleteState.entry.id;
     setSavedStrategies(restoredEntries);
+    setHiddenSavedIds((currentIds) => currentIds.filter((currentId) => currentId !== restoredEntryId));
     setUndoDeleteState(null);
 
     try {
@@ -606,7 +624,7 @@ function DashboardPageInner() {
           currentPlan={effectivePlan === "pro" ? "Pro" : "Free"}
           remainingFreeGenerations={remainingFreeGenerations}
           activeView={activeView}
-          savedCount={savedStrategies.length}
+          savedCount={visibleSavedStrategies.length}
           onChangeView={setActiveView}
           onActivateTestPro={handleActivateTestPro}
         />
@@ -716,9 +734,9 @@ function DashboardPageInner() {
                 </div>
               </div>
 
-              {savedStrategies.length > 0 ? (
+              {visibleSavedStrategies.length > 0 ? (
                 <div className="space-y-4">
-                  {savedStrategies.map((item) => {
+                  {visibleSavedStrategies.map((item) => {
                     const isExpanded = item.id === expandedSavedId;
 
                     if (isExpanded) {
