@@ -270,6 +270,11 @@ function DashboardPageInner() {
     }
 
     const updateScrollHint = () => {
+      if (activeView !== "generate" || isCalendarOpen) {
+        setShowScrollHint(false);
+        return;
+      }
+
       const pageHeight = Math.max(
         document.documentElement.scrollHeight,
         document.body.scrollHeight,
@@ -278,13 +283,13 @@ function DashboardPageInner() {
       );
       const remainingScroll = pageHeight - window.innerHeight - window.scrollY;
       const canScrollDown = remainingScroll > 80;
-      const nearTop = window.scrollY < 48;
+      const nearTop = window.scrollY <= 8;
 
-      if (window.scrollY > 24) {
+      if (window.scrollY > 8) {
         setHasDismissedScrollHint(true);
       }
 
-      setShowScrollHint(!isCalendarOpen && !hasDismissedScrollHint && canScrollDown && nearTop);
+      setShowScrollHint(!hasDismissedScrollHint && canScrollDown && nearTop);
     };
 
     updateScrollHint();
