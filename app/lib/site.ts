@@ -99,6 +99,21 @@ export const faqItems = [
   },
 ] as const;
 
+function normalizeSiteUrl(value: string | undefined) {
+  const trimmed = value?.trim() || "";
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return withProtocol.replace(/\/$/, "");
+}
+
 export function getBaseUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/$/, "");
+  const vercelProductionUrl =
+    process.env.VERCEL === "1" ? normalizeSiteUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL) : "";
+  const explicitUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+
+  return vercelProductionUrl || explicitUrl || DEFAULT_SITE_URL;
 }
