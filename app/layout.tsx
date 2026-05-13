@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  verification: {
+    google: "ZJOURBQaR1WxMorEUnHNsBAaL9Bm2DUEmwEc_dTC5Rg",
+  },
   applicationName: siteConfig.name,
   keywords: [
     "AI content generator",
